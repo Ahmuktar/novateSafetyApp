@@ -1,101 +1,85 @@
+"use client";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import Navbar from "@/components/Navbar";
+import Sidebar from "@/components/Sidebar";
+import Footer from "@/components/Footer";
 import Image from "next/image";
+import Link from "next/link";
 
-export default function Home() {
+export default function WelcomePage() {
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="min-h-screen bg-background flex flex-row">
+      {/* Sidebar for larger screens */}
+      {/* <Sidebar /> */}
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      {/* Main Content */}
+      <div className="relative flex min-h-full max-w-full flex-1 flex-col overflow-hidden">
+        {/* Navbar */}
+        <Navbar />
+
+        {/* Welcome Content */}
+        <main className="flex-grow flex flex-col h-full justify-center items-center px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col space-y-6 items-center w-1/3">
+            <div className="mb-20">
+              <Image
+                src="/images/icon.png"
+                width={200}
+                height={200}
+                alt="Logo"
+                className="rounded-full dark:hidden"
+              />
+              <Image
+                src="/images/icon2.png"
+                width={200}
+                height={200}
+                alt="Logo"
+                className="rounded-full light:hidden"
+              />
+            </div>
+            <div className="">
+              <h1 className="text-4xl font-bold text-center mb-6">
+                Welcome to the Novate Safety App
+              </h1>
+              <p className="text-xl text-center mb-8 max-w-2xl">
+                Your trusted platform for reporting Adverse Drug Reactions
+                (ADRs).
+              </p>
+              <p className="text-sm text-center mb-4 max-w-2xl">
+                Before you start reporting, please read and accept our Terms and
+                Conditions. This helps ensure you understand our policies and
+                how we handle your reports.
+              </p>
+            </div>
+            <div className="w-full items-center flex flex-col max-w-md">
+              <div className="flex items-center mb-4">
+                <input
+                  type="checkbox"
+                  id="acceptTerms"
+                  className="mr-2"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                />
+                <label htmlFor="acceptTerms" className="text-sm">
+                  I accept the{" "}
+                  <Link href="/" className="underline">
+                    Terms and Conditions
+                  </Link>
+                </label>
+              </div>
+              <form className="flex items-center">
+                <Button type="submit" disabled={!acceptedTerms}>
+                  Start Reporting
+                </Button>
+              </form>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
     </div>
   );
 }
