@@ -23,9 +23,9 @@ const Navbar = () => {
           <div className="flex items-center">
             <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden">
+                {/* <Button variant="ghost" size="icon" className="md:hidden">
                   <MenuIcon className="h-6 w-6" />
-                </Button>
+                </Button> */}
               </SheetTrigger>
               <SheetContent side="left" className="w-[300px] sm:w-[400px]">
                 <nav className="flex flex-col flex-1">
