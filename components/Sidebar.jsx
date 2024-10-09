@@ -3,46 +3,30 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Switch } from "@/components/ui/switch";
 import {
   PlusIcon,
   MessageSquare,
-  Settings,
-  Moon,
-  Sun,
-  ChevronLeft,
-  ChevronRight,
+  PanelRightOpen,
+  PanelLeftOpen,
 } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
+import { cases } from "@/constant";
 
 export default function Sidebar() {
+  const pathname = usePathname();
+
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  // Fake ADR Report
-  const [chats, setChats] = useState([
-    { id: 1, title: "Adverse Drug Reaction 1", date: "2023-06-15" },
-    { id: 2, title: "Adverse Drug Reaction 2", date: "2023-06-14" },
-    { id: 3, title: "Adverse Drug Reaction 3", date: "2023-06-13" },
-  ]);
 
   const toggleSidebar = () => setIsCollapsed(!isCollapsed);
-  const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
-
-  const addNewChat = () => {
-    const newChat = {
-      id: Date.now().toString(),
-      title: "Adverse Drug Reaction 1",
-      date: new Date().toISOString().split("T")[0],
-    };
-    setChats([newChat, ...chats]);
-  };
 
   return (
-    <div className={`flex h-screen ${isDarkMode ? "dark" : ""}`}>
+    <div className="flex h-screen">
       <div
         className={`
-          bg-gray-900 text-white transition-all duration-300 ease-in-out
-          ${isCollapsed ? "w-16" : "w-64"}
+          bg-gray-900 text-white max-md:hidden transition-all duration-300 ease-in-out
+          ${isCollapsed ? "hidden" : "w-64"}
         `}
       >
         <div className="flex flex-col h-full">
@@ -51,79 +35,50 @@ export default function Sidebar() {
               className={`w-full justify-start text-white hover:text-white hover:bg-gray-700
                 ${isCollapsed ? "px-0 justify-center" : ""}
               `}
-              onClick={addNewChat}
+              onClick={{}}
             >
               <PlusIcon className="h-5 w-5" />
               {!isCollapsed && <span className="ml-2">New case</span>}
             </Button>
           </div>
 
-          <ScrollArea className="flex-grow px-4">
-            {chats.map((chat) => (
-              <Button
-                key={chat.id}
-                variant="ghost"
-                className={`w-full justify-start text-gray-300 hover:text-white hover:bg-gray-700 mb-1
-                  ${isCollapsed ? "px-0 justify-center" : ""}
-                `}
-              >
-                <MessageSquare className="h-5 w-5 flex-shrink-0" />
-                {!isCollapsed && (
-                  <span className="ml-2 truncate">{chat.title}</span>
-                )}
-              </Button>
-            ))}
+          <ScrollArea className="px-4">
+            {cases.map((item) => {
+              const fullRoute = `/case/${item.caseId}`;
+              const isActive = pathname === fullRoute;
+
+              return (
+                <Link
+                  href={`/case/${item.caseId}`}
+                  className={cn(
+                    "w-full flex h-11 px-4 py-2 rounded-md justify-start items-center gap-2 text-gray-300 hover:text-white hover:bg-gray-700 mb-1",
+                    { "bg-gray-700": isActive }
+                  )}
+                >
+                  <MessageSquare className="h-5 w-5 flex-shrink-0" />
+                  <span className="truncate flex-1 w-12 overflow-hidden text-ellipsis">
+                    {item.title}
+                  </span>
+                </Link>
+              );
+            })}
           </ScrollArea>
-
-          <div className="p-4 border-t border-gray-700">
-            <Button
-              variant="ghost"
-              className={`w-full justify-start text-gray-300 hover:text-white hover:bg-gray-700 mb-2
-                ${isCollapsed ? "px-0 justify-center" : ""}
-              `}
-            >
-              <Settings className="h-5 w-5 flex-shrink-0" />
-              {!isCollapsed && <span className="ml-2">Settings</span>}
-            </Button>
-
-            <div
-              className={`flex items-center ${
-                isCollapsed ? "justify-center" : "justify-between"
-              }`}
-            >
-              {!isCollapsed && <span className="text-sm">Dark mode</span>}
-              <Switch
-                checked={isDarkMode}
-                onCheckedChange={toggleDarkMode}
-                className="data-[state=checked]:bg-gray-700"
-              />
-            </div>
-
-            <div className="mt-4 flex items-center space-x-2">
-              <Avatar className="h-8 w-8">
-                <AvatarImage
-                  src="https://github.com/shadcn.png"
-                  alt="@shadcn"
-                />
-                <AvatarFallback>CN</AvatarFallback>
-              </Avatar>
-              {!isCollapsed && (
-                <span className="text-sm font-medium">John Doe</span>
-              )}
-            </div>
-          </div>
         </div>
       </div>
 
       <Button
         variant="ghost"
         size="icon"
-        className={`absolute top-4 dark:text-white ${
-          isCollapsed ? "left-16" : "left-64"
+        className={`absolute max-md:hidden max-md:left-1 top-4 dark:text-white ${
+          isCollapsed ? "left-4" : "left-64"
         }`}
         onClick={toggleSidebar}
       >
-        {isCollapsed ? <ChevronRight /> : <ChevronLeft />}
+        {isCollapsed ? (
+          <PanelLeftOpen className="text-gray-500" />
+        ) : (
+          <PanelRightOpen className="text-gray-500" />
+        )}
       </Button>
     </div>
   );

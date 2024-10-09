@@ -1,6 +1,7 @@
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function RootLayout({ children }) {
   return (
@@ -15,9 +16,8 @@ export default function RootLayout({ children }) {
 
         {/* Welcome Content */}
         <main className="flex-1 overflow-y-auto p-6">
-          <div className="w-full">{children}</div>
+          <ScrollArea className="w-full">{children}</ScrollArea>
         </main>
-        <Footer />
       </div>
     </div>
   );
