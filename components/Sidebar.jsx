@@ -22,7 +22,7 @@ export default function Sidebar() {
   const toggleSidebar = () => setIsCollapsed(!isCollapsed);
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen max-sm:hidden">
       <div
         className={`
           bg-gray-900 text-white max-md:hidden transition-all duration-300 ease-in-out

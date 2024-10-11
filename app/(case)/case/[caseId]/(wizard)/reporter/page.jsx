@@ -14,17 +14,24 @@ import {
 } from "@/components/ui/select";
 
 export default function ReporterPage({ params }) {
+  const [isLoading, setIsLoading] = useState(false);
   const [showProfession, setShowProfession] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    // const formData = new FormData(event.currentTarget)
-    // await fetch(`/api/case/${params.caseId}/reporter`, {
+    setIsLoading(true);
+    // Generate random caseId
+    const caseId = Math.floor(Math.random() * 1000000) + 1;
+
+    // const response = await fetch("/api/create-case", {
     //   method: "POST",
-    //   body: formData,
-    // })
-    router.push(`/case/${params.caseId}/patient`);
+    //   headers: { "Content-Type": "application/json" },
+    //   body: JSON.stringify({ reporterType, reportType }),
+    // });
+    // const data = await response.json();
+    setIsLoading(false);
+    router.push(`/case/${caseId}/patient`);
   };
 
   return (

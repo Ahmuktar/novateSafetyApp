@@ -11,7 +11,7 @@ export default function WelcomePage() {
 
   const handleStartReporting = () => {
     if (acceptedTerms) {
-      router.push("/case");
+      router.push("/case/new");
     }
   };
 

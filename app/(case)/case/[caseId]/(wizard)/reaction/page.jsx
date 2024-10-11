@@ -12,8 +12,10 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { DeleteIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-const ReactionPage = () => {
+const ReactionPage = ({ params }) => {
+  const router = useRouter();
   const [reactions, setReactions] = useState([
     { reactionData: [], isSerious: false, seriousEffects: [] },
   ]);
@@ -50,6 +52,16 @@ const ReactionPage = () => {
         i === index ? { ...reaction, isSerious } : reaction
       )
     );
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    // const formData = new FormData(event.currentTarget)
+    // await fetch(`/api/case/${params.caseId}/reporter`, {
+    //   method: "POST",
+    //   body: formData,
+    // })
+    router.push(`/case/${params.caseId}/summary`);
   };
 
   return (
@@ -179,9 +191,23 @@ const ReactionPage = () => {
         </div>
       ))}
 
-      <div className="flex justify-end space-x-4">
-        <Button variant="link" onClick={handleAddReaction}>
-          Add another reaction/side effect
+      {reactions.length < 2 && (
+        <div className="flex justify-end space-x-4">
+          <Button variant="link" onClick={handleAddReaction}>
+            Add another reaction/side effect
+          </Button>
+        </div>
+      )}
+      <div className="flex justify-between space-x-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.push(`/case/${params.caseId}/medicine`)}
+        >
+          Back
+        </Button>
+        <Button type="submit" onClick={handleSubmit}>
+          Next
         </Button>
       </div>
     </div>

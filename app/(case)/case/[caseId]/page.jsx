@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,161 +9,343 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import {
-  CheckCircle2,
-  Clock,
-  AlertTriangle,
-  FileText,
-  MessageSquare,
-  ExternalLink,
-} from "lucide-react";
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { ArrowLeft, Download, Printer } from "lucide-react";
+import Link from "next/link";
 
-const statusConfig = {
-  draft: { color: "bg-gray-500", icon: Clock },
-  submitted: { color: "bg-blue-500", icon: FileText },
-  under_review: { color: "bg-yellow-500", icon: MessageSquare },
-  action_required: { color: "bg-red-500", icon: AlertTriangle },
-  closed: { color: "bg-green-500", icon: CheckCircle2 },
+// Fake data for a detailed case report with multiple drugs and reactions
+const caseReport = {
+  id: "143455",
+  status: "submitted",
+  submissionDate: "2023-06-17",
+  lastUpdated: "2023-06-17",
+  reporter: {
+    name: "Dr. Jane Smith",
+    profession: "Pharmacist",
+    organization: "City General Hospital",
+    email: "jane.smith@cityhospital.com",
+    phone: "+1 (555) 123-4567",
+  },
+  patient: {
+    initials: "AS",
+    age: 45,
+    ageUnit: "years",
+    sex: "Female",
+    weight: 70,
+    weightUnit: "kg",
+    height: 165,
+    heightUnit: "cm",
+    medicalHistory: "Type 2 Diabetes, Hypertension",
+  },
+  drugs: [
+    {
+      name: "Metformin",
+      brandName: "Glucophage",
+      manufacturer: "Bristol-Myers Squibb",
+      batchNumber: "MET20230501",
+      dosage: "1000",
+      dosageUnit: "mg",
+      frequency: "twice daily",
+      route: "Oral",
+      startDate: "2023-05-01",
+      endDate: "2023-06-15",
+      indication: "Type 2 Diabetes management",
+    },
+    {
+      name: "Lisinopril",
+      brandName: "Zestril",
+      manufacturer: "AstraZeneca",
+      batchNumber: "LIS20230401",
+      dosage: "10",
+      dosageUnit: "mg",
+      frequency: "once daily",
+      route: "Oral",
+      startDate: "2023-04-01",
+      endDate: "Ongoing",
+      indication: "Hypertension management",
+    },
+  ],
+  reactions: [
+    {
+      description: "Severe nausea and abdominal pain",
+      startDate: "2023-06-10",
+      endDate: "2023-06-15",
+      outcome: "Recovered",
+      seriousness: ["Hospitalization"],
+      interventions: [
+        "Temporary discontinuation of Metformin",
+        "IV fluid administration",
+        "Antiemetic medication",
+      ],
+    },
+    {
+      description: "Persistent dry cough",
+      startDate: "2023-05-15",
+      endDate: "Ongoing",
+      outcome: "Not recovered",
+      seriousness: ["Medically significant"],
+      interventions: ["Monitoring", "Considering alternative medication"],
+    },
+  ],
+  additionalInfo:
+    "Patient was admitted to the hospital for 2 days due to severe dehydration caused by persistent nausea and vomiting. Symptoms improved after discontinuation of Metformin. The persistent dry cough is suspected to be related to Lisinopril use.",
 };
 
-export default function CaseDashboard({ params }) {
-  // fake data
-  const caseData = [
-    {
-      id: 1,
-      reportType: "Severe Acute Respiratory Syndrome (SARS-CoV-2)",
-      reporterType: "Dr. John Doe",
-      status: "draft",
-    },
-    {
-      id: 2,
-      reportType: "Coronavirus Disease 2019 (COVID-19)",
-      reporterType: "Dr. Jane Smith",
-      status: "submitted",
-    },
-    {
-      id: 3,
-      reportType: "Pneumonia",
-      reporterType: "Dr. Mark Johnson",
-      status: "under_review",
-    },
-    {
-      id: 4,
-      reportType: "Influenza",
-      reporterType: "Dr. Emily Brown",
-      status: "action_required",
-    },
-  ];
-  // const [caseData, setCaseData] = useState([]);
-  const router = useRouter();
+export default function ViewReport() {
+  const handlePrint = () => {
+    window.print();
+  };
 
-  useEffect(() => {
-    const fetchCaseData = async () => {
-      const response = await fetch(`/api/case/${params.caseId}`);
-      const data = await response.json();
-      setCaseData(data);
-    };
-    fetchCaseData();
-  }, [params.caseId]);
-
-  // if (!caseData) {
-  //   return <div>Loading...</div>
-  // }
-
-  // const StatusIcon = statusConfig[caseData?.status].icon;
+  const handleDownload = () => {
+    // In a real application, this would generate and download a PDF or other formatted report
+    alert("Downloading report... (This is a placeholder action)");
+  };
 
   return (
-    <div className="container mx-auto py-10">
-      <Card className="w-full max-w-4xl mx-auto">
+    <div className="container mx-auto py-8 px-4 max-w-4xl">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Adverse Drug Reaction Report</h1>
+        <div className="flex space-x-2">
+          <Button variant="outline" onClick={handlePrint}>
+            <Printer className="mr-2 h-4 w-4" />
+            Print
+          </Button>
+          <Button variant="outline" onClick={handleDownload}>
+            <Download className="mr-2 h-4 w-4" />
+            Download
+          </Button>
+        </div>
+      </div>
+
+      <Card className="mb-6">
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Case #{caseData?.id}</CardTitle>
-              <CardDescription>
-                {caseData?.reportType} report by {caseData?.reporterType}
-              </CardDescription>
-            </div>
-            <div className={` text-white`}>
-              {/* <StatusIcon className="w-4 h-4 mr-2" /> */}
-              {caseData?.status?.replace("_", " ").charAt(0).toUpperCase() +
-                caseData?.status?.replace("_", " ").slice(1)}
-            </div>
-          </div>
+          <CardTitle className="flex justify-between items-center">
+            <span>Case #{caseReport.id}</span>
+            <Badge>Submitted</Badge>
+          </CardTitle>
+          <CardDescription>
+            Submitted on {caseReport.submissionDate} | Last updated:{" "}
+            {caseReport.lastUpdated}
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div>
-            <h3 className="text-lg font-medium mb-2">Progress</h3>
-            <Progress value={40} className="w-full" />
-            <p className="text-sm text-gray-500 mt-2">{40}% complete</p>
-          </div>
-          <Separator />
-          <div>
-            <h3 className="text-lg font-medium mb-2">Case Details</h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="font-medium">Submission Date</p>
-                <p>{caseData?.submissionDate || "Not submitted"}</p>
-              </div>
-              <div>
-                <p className="font-medium">Last Updated</p>
-                <p>{caseData?.lastUpdated}</p>
-              </div>
-              <div>
-                <p className="font-medium">Reviewer</p>
-                <p>{caseData?.reviewer || "Not assigned"}</p>
-              </div>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Reporter Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Name</p>
+              <p className="font-medium">{caseReport.reporter.name}</p>
             </div>
-          </div>
-          <Separator />
-          <div>
-            <h3 className="text-lg font-medium mb-2">Recent Actions</h3>
-            <ul className="space-y-2">
-              {caseData?.actions?.map((action, index) => (
-                <li key={index} className="text-sm">
-                  <span className="font-medium">{action.date}:</span>{" "}
-                  {action.action} by {action.by}
-                </li>
-              ))}
-            </ul>
+            <div>
+              <p className="text-sm text-muted-foreground">Profession</p>
+              <p className="font-medium">{caseReport.reporter.profession}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Organization</p>
+              <p className="font-medium">{caseReport.reporter.organization}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Email</p>
+              <p className="font-medium">{caseReport.reporter.email}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Phone</p>
+              <p className="font-medium">{caseReport.reporter.phone}</p>
+            </div>
           </div>
         </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={() => router.push("/dashboard")}>
-            Back to All Cases
-          </Button>
-          <div className="space-x-2">
-            {caseData?.status === "draft" && (
-              <Button
-                onClick={() =>
-                  router.push(`/case/${params.caseId}/(wizard)/reporter`)
-                }
-              >
-                Continue Editing
-              </Button>
-            )}
-            {caseData?.status !== "closed" && (
-              <Button
-                onClick={() => router.push(`/case/${params.caseId}/messages`)}
-              >
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Messages
-              </Button>
-            )}
-            <Button
-              variant="secondary"
-              onClick={() =>
-                window.open(`/case/${params.caseId}/print`, "_blank")
-              }
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Print Report
-            </Button>
-          </div>
-        </CardFooter>
       </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Patient Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Initials</p>
+              <p className="font-medium">{caseReport.patient.initials}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Age</p>
+              <p className="font-medium">
+                {caseReport.patient.age} {caseReport.patient.ageUnit}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Sex</p>
+              <p className="font-medium">{caseReport.patient.sex}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Weight</p>
+              <p className="font-medium">
+                {caseReport.patient.weight} {caseReport.patient.weightUnit}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Height</p>
+              <p className="font-medium">
+                {caseReport.patient.height} {caseReport.patient.heightUnit}
+              </p>
+            </div>
+            <div className="col-span-2">
+              <p className="text-sm text-muted-foreground">Medical History</p>
+              <p className="font-medium">{caseReport.patient.medicalHistory}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Drug Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Accordion type="single" collapsible className="w-full">
+            {caseReport.drugs.map((drug, index) => (
+              <AccordionItem value={`drug-${index}`} key={index}>
+                <AccordionTrigger>{drug.name}</AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid grid-cols-2 gap-4 pt-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">
+                        Brand Name
+                      </p>
+                      <p className="font-medium">{drug.brandName}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">
+                        Manufacturer
+                      </p>
+                      <p className="font-medium">{drug.manufacturer}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">
+                        Batch Number
+                      </p>
+                      <p className="font-medium">{drug.batchNumber}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Dosage</p>
+                      <p className="font-medium">
+                        {drug.dosage} {drug.dosageUnit}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Frequency</p>
+                      <p className="font-medium">{drug.frequency}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Route</p>
+                      <p className="font-medium">{drug.route}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">
+                        Start Date
+                      </p>
+                      <p className="font-medium">{drug.startDate}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">End Date</p>
+                      <p className="font-medium">{drug.endDate}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-sm text-muted-foreground">
+                        Indication
+                      </p>
+                      <p className="font-medium">{drug.indication}</p>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Adverse Reactions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Accordion type="single" collapsible className="w-full">
+            {caseReport.reactions.map((reaction, index) => (
+              <AccordionItem value={`reaction-${index}`} key={index}>
+                <AccordionTrigger>{reaction.description}</AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid grid-cols-2 gap-4 pt-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">
+                        Start Date
+                      </p>
+                      <p className="font-medium">{reaction.startDate}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">End Date</p>
+                      <p className="font-medium">{reaction.endDate}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Outcome</p>
+                      <p className="font-medium">{reaction.outcome}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">
+                        Seriousness
+                      </p>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {reaction.seriousness.map((item, idx) => (
+                          <Badge key={idx} variant="outline">
+                            {item}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-sm text-muted-foreground">
+                        Interventions
+                      </p>
+                      <ul className="list-disc list-inside font-medium">
+                        {reaction.interventions.map((item, idx) => (
+                          <li key={idx}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Additional Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>{caseReport.additionalInfo}</p>
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-between items-center mt-8">
+        <Button variant="outline" asChild>
+          <Link href="/dashboard">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Dashboard
+          </Link>
+        </Button>
+      </div>
     </div>
   );
 }

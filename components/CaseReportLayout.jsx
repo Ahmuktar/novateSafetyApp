@@ -6,7 +6,7 @@ import { CheckCircle2, Circle } from "lucide-react";
 
 const steps = [
   {
-    path: "/reporter",
+    path: "/new",
     title: "Reporter Information",
     subtitle: "Provide further information about yourself",
     description:
@@ -41,7 +41,7 @@ const steps = [
   },
 ];
 
-export default function CaseLayout({ children, params }) {
+const CaseReportLayout = ({ children, params }) => {
   const pathname = usePathname();
   const currentStepIndex = steps.findIndex((step) =>
     pathname.endsWith(step.path)
@@ -52,15 +52,11 @@ export default function CaseLayout({ children, params }) {
       <Card className="w-full max-w-7xl mx-auto">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-6">
-            {/* Sidebar for larger screens */}
             <div className="max-md:hidden w-full md:w-1/3 lg:w-1/4">
               <ol className="relative border-l border-gray-200 dark:border-gray-700">
                 {steps.map((step, index) => (
                   <li key={index} className="mb-12 ml-6">
                     <span
-                      aria-current={
-                        index === currentStepIndex ? "step" : undefined
-                      }
                       className={`absolute flex items-center justify-center w-8 h-8 rounded-full -left-4 ring-4 ring-white dark:ring-gray-900 ${
                         index < currentStepIndex
                           ? "bg-green-500"
@@ -99,14 +95,12 @@ export default function CaseLayout({ children, params }) {
                 ))}
               </ol>
             </div>
-
-            {/* Mobile step navigation */}
-            <div className="mb-8 md:hidden">
-              <ol className="flex items-center justify-between w-full text-sm font-medium text-center text-gray-500 dark:text-gray-400 sm:text-base overflow-x-auto">
+            <div className="mb-8 hidden max-md:block">
+              <ol className="flex items-center w-full text-sm font-medium text-center text-gray-500 dark:text-gray-400 sm:text-base">
                 {steps.map((step, index) => (
                   <li
                     key={index}
-                    className={`flex flex-col items-center min-w-[80px] md:w-full ${
+                    className={`flex md:w-full items-center ${
                       index === currentStepIndex
                         ? "text-blue-600 dark:text-blue-500"
                         : ""
@@ -130,14 +124,14 @@ export default function CaseLayout({ children, params }) {
                 ))}
               </ol>
             </div>
-
-            {/* Main content */}
             <div className="w-full md:w-2/3 lg:w-3/4">
               <h2 className="text-2xl font-bold mb-2 sm:mb-4">
-                {steps[currentStepIndex].title}
+                Reporter Information
               </h2>
               <p className="text-gray-500 text-sm mb-6">
-                {steps[currentStepIndex].description}
+                We need basic details about you for tracking the report and
+                contacting you if necessary. Your information remains
+                confidential.
               </p>
               {children}
             </div>
@@ -146,4 +140,6 @@ export default function CaseLayout({ children, params }) {
       </Card>
     </div>
   );
-}
+};
+
+export default CaseReportLayout;

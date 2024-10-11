@@ -180,7 +180,7 @@ export default function MedicinePage({ params }) {
             When was the medicine started?
             <span className="text-red-600"> *</span>
           </Label>
-          <DatePicker />
+          <Input id="medstart" name="medstart" type="date" />
         </div>
         <div className="space-y-2">
           <Label htmlFor="ageunit">
@@ -202,10 +202,10 @@ export default function MedicinePage({ params }) {
         </div>
         <div className="space-y-2">
           <Label>
-            When was the medicine started?
+            When was the medicine stopped?
             <span className="text-red-600"> *</span>
           </Label>
-          <DatePicker />
+          <Input id="medstop" name="medstop" type="date" />
         </div>
         <div className="space-y-2">
           <input type="checkbox" id="addImage" className="mr-2" />
