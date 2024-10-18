@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { MenuIcon, MessageSquare, PlusIcon } from "lucide-react";
 import Link from "next/link";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { cases } from "@/constant";
+import { sidebarLinks } from "@/constant";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 
@@ -33,7 +33,7 @@ const MobileNav = () => {
               </Button>
             </div>
             <ScrollArea>
-              {cases.map((item) => {
+              {/* {sidebarLinks.map((item) => {
                 const fullRoute = `/case/${item.caseId}`;
                 const isActive = pathname === fullRoute;
 
@@ -51,7 +51,7 @@ const MobileNav = () => {
                     </span>
                   </Link>
                 );
-              })}
+              })} */}
             </ScrollArea>
           </div>
         </div>
