@@ -16,7 +16,7 @@ import SidebarListItem from "./SidebarListItem";
 import Image from "next/image";
 
 const sidebarLinks = [
-  { href: "/", icon: HomeIcon, label: "Home" },
+  { href: "", icon: HomeIcon, label: "Home" },
   { href: "/case/new", icon: PlusIcon, label: "New Case" },
   { href: "/case", icon: MessageCircleWarning, label: "Cases" },
 ];
@@ -37,10 +37,22 @@ export default function Sidebar() {
       >
         <div className="flex flex-col h-full">
           <div className="p-4">
-          <Image src="/images/logo2.png" width={200} height={200} alt="Logo" className="dark:hidden" />
-          <Image src="/images/logo.png" width={200} height={200} alt="Logo" className="dark:block hidden" />
+            <Image
+              src="/images/logo2.png"
+              width={200}
+              height={200}
+              alt="Logo"
+              className="dark:hidden"
+            />
+            <Image
+              src="/images/logo.png"
+              width={200}
+              height={200}
+              alt="Logo"
+              className="dark:block hidden"
+            />
           </div>
-          
+
           <div className="p-4">
             {sidebarLinks.map((item) => {
               const isActive = pathname === item.href;
