@@ -14,15 +14,9 @@ import {
 import { CheckCircle2, ArrowRight, FileText, Home } from "lucide-react";
 import Link from "next/link";
 
-export default function SuccessPage() {
+export default function SuccessPage({ params }) {
+  const { caseId } = params;
   const router = useRouter();
-  const [reportId, setReportId] = useState(null);
-
-  useEffect(() => {
-    // In a real application, you would get this from the form submission response
-    // or from URL parameters. For this example, we're generating a random ID.
-    setReportId(Math.random().toString(36).substr(2, 9).toUpperCase());
-  }, []);
 
   return (
     <div className="container mx-auto py-16 px-4 max-w-2xl">
@@ -44,7 +38,7 @@ export default function SuccessPage() {
             and will be reviewed by our team.
           </p>
           <div className="bg-muted p-4 rounded-md">
-            <p className="font-semibold">Report ID: {reportId}</p>
+            <p className="font-semibold">Case ID: {caseId}</p>
             <p className="text-sm text-muted-foreground">
               Please save this ID for your records
             </p>
@@ -52,7 +46,7 @@ export default function SuccessPage() {
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
           <Button className="w-full" asChild>
-            <Link href={`/case/${reportId}`}>
+            <Link href={`/case/${caseId}`}>
               <FileText className="mr-2 h-4 w-4" />
               View Submitted Report
             </Link>
@@ -86,7 +80,7 @@ export default function SuccessPage() {
             <ArrowRight className="mr-2 h-5 w-5 mt-0.5 flex-shrink-0 text-primary" />
             <span>
               You can track the status of your report in your dashboard or by
-              using the provided Report ID.
+              using the provided Case ID.
             </span>
           </li>
         </ol>
