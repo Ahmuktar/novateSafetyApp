@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { API_URL } from "@/constant";
 import { z } from "zod";
+import { useToast } from "@/hooks/use-toast";
 
 // Zod schema for validation
 const reporterSchema = z.object({
@@ -28,7 +29,7 @@ const reporterSchema = z.object({
   city: z.string().optional(),
   state: z.string().min(1, "State is required"),
   postal_code: z.string().optional(),
-  useInFuture: z.boolean().optional(),
+  // useInFuture: z.number().optional(),
 });
 
 export default function ReporterPage({ params }) {
@@ -54,50 +55,82 @@ export default function ReporterPage({ params }) {
   const [formErrors, setFormErrors] = useState({});
   const [showProfession, setShowProfession] = useState(false);
   const router = useRouter();
+  const { toast } = useToast();
 
-  // Function to handle form input changes
+  // Fetch existing reporter data if it exists
+  useEffect(() => {
+    const fetchReporter = async () => {
+      try {
+        const response = await fetch(
+          `${API_URL}/reporters/${params?.caseId}/case`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          console.log(data);
+          if (data) {
+            // Populate the form with the existing reporter data
+            setFormData({
+              describes: data.describes || "",
+              whois: data.whois || "",
+              profession: data.profession || "",
+              title: data.title || "",
+              first_name: data.first_name || "",
+              last_name: data.last_name || "",
+              email: data.email || "",
+              phone: data.phone || "",
+              company: data.company || "",
+              address: data.address || "",
+              city: data.city || "",
+              state: data.state || "",
+              postal_code: data.postal_code || "",
+              useInFuture: data.useInFuture || false,
+            });
+            setShowProfession(data.whois === "Healthcare professional");
+          }
+        } else {
+          throw new Error("Failed to fetch reporter");
+        }
+      } catch (error) {
+        console.error("Error fetching reporter:", error);
+      }
+    };
+
+    fetchReporter();
+  }, [params?.caseId]);
+
+  // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Function to submit the reporter data
   const submitReporter = async (caseId) => {
     try {
-      const reporterResponse = await fetch(`${API_URL}/reporters`, {
-        method: "POST",
+      const isExistingReporter =
+        formData.email !== "" &&
+        formData.first_name !== "" &&
+        formData.last_name !== "";
+
+      const url = isExistingReporter
+        ? `${API_URL}/reporters/${params?.caseId}`
+        : `${API_URL}/reporters`;
+      const method = isExistingReporter ? "PUT" : "POST";
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...formData, case_id: caseId }),
       });
 
-      const reporterData = await reporterResponse.json();
-      if (reporterResponse.ok) {
-        await updateCase(caseId, reporterData.id);
-      } else {
-        throw new Error(reporterData.message || "Failed to submit reporter");
-      }
-    } catch (error) {
-      toast({ description: error.message, variant: "destructive" });
-      setIsLoading(false);
-    }
-  };
+      if (!response.ok) throw new Error("Failed to submit reporter.");
 
-  // Function to create a new case
-  const createCase = async () => {
-    try {
-      const response = await fetch(`${API_URL}/cases`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
       const data = await response.json();
-      if (response.ok && data.caseId) {
-        return data.caseId;
+      if (isExistingReporter) {
+        router.push(`/case/${params?.caseId}/patient`);
       } else {
-        throw new Error(data.message || "Failed to create case");
+        await updateCase(caseId, data.id);
       }
     } catch (error) {
-      toast({ description: error.message, variant: "destructive" });
+      console.error("Error submitting reporter:", error);
       setIsLoading(false);
     }
   };
@@ -118,15 +151,32 @@ export default function ReporterPage({ params }) {
         throw new Error(updateData.message || "Failed to update case");
       }
     } catch (error) {
-      toast({ description: error.message, variant: "destructive" });
+      console.error("Error updating case:", error);
       setIsLoading(false);
     }
   };
 
-  // Handle form submission
+  const createCase = async () => {
+    try {
+      const response = await fetch(`${API_URL}/cases`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await response.json();
+      if (response.ok && data.caseId) {
+        return data.caseId;
+      } else {
+        throw new Error(data.message || "Failed to create case.");
+      }
+    } catch (error) {
+      console.error("Error creating case:", error);
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
-    console.log(formData);
     setIsLoading(true);
     setFormErrors({}); // Reset form errors
 
@@ -140,10 +190,8 @@ export default function ReporterPage({ params }) {
     }
 
     try {
-      // Step 1: Create a new case and get caseId
-      const caseId = await createCase();
+      const caseId = params?.caseId || (await createCase());
       if (caseId) {
-        // Step 2: Submit reporter information with the caseId
         await submitReporter(caseId);
       }
     } catch (error) {
@@ -152,343 +200,401 @@ export default function ReporterPage({ params }) {
     }
   };
 
+  const [isDraftLoading, setIsDraftLoading] = useState(false);
+  const handleSaveDraft = async () => {
+    setIsDraftLoading(true);
+
+    try {
+      const updateResponse = await fetch(`${API_URL}/cases/${params.caseId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "draft" }),
+      });
+
+      if (updateResponse.ok) {
+        toast({
+          title: "Draft saved successfully!",
+          description: "Your changes have been saved as a draft.",
+        });
+      } else {
+        const updateData = await updateResponse.json();
+        toast({
+          title: "Unable to save draft",
+          description:
+            updateData.message ||
+            "There was an issue saving your draft. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Save draft failed",
+        description:
+          "An unexpected error occurred. Please check your connection or try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDraftLoading(false);
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="describes">What best describes you?</Label>
-          <Select
-            name="describes"
-            value={formData.describes}
-            onValueChange={(value) =>
-              setFormData((prev) => ({ ...prev, describes: value }))
-            }
-          >
-            <SelectTrigger id="describes">
-              <SelectValue placeholder="Select from list" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Member of Public">Member of Public</SelectItem>
-              <SelectItem value="Healthcare Professional">
-                Healthcare Professional
-              </SelectItem>
-              <SelectItem value="Pharmaceutical Company">
-                Pharmaceutical Company
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          {formErrors.describes && (
-            <p className="text-red-600 text-xs">
-              {formErrors.describes._errors[0]}
-            </p>
-          )}
+    <div className="relative">
+      {isLoading && (
+        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Loader2 className="w-8 h-8 text-white animate-spin" />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="reporter">
-            Who is reporting?<span className="text-red-600">*</span>
-          </Label>
-          <Select
-            value={formData.whois}
-            onValueChange={(value) => {
-              setFormData((prev) => ({ ...prev, whois: value }));
-              setShowProfession(value === "Healthcare professional");
-            }}
-          >
-            <SelectTrigger id="reporter">
-              <SelectValue placeholder="Select from list" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Patient">Patient</SelectItem>
-              <SelectItem value="Patient relatives">
-                Patient relatives
-              </SelectItem>
-              <SelectItem value="Healthcare professional">
-                Healthcare professional
-              </SelectItem>
-              <SelectItem value="Pharmaceutical company">
-                Pharmaceutical company
-              </SelectItem>
-              <SelectItem value="Lawyer">Lawyer</SelectItem>
-            </SelectContent>
-          </Select>
-          {formErrors.whois && (
-            <p className="text-red-600 text-xs">
-              {formErrors.whois._errors[0]}
-            </p>
-          )}
-        </div>
-        {showProfession && (
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="profession">
-              Profession<span className="text-red-600">*</span>
-            </Label>
+            <Label htmlFor="describes">What best describes you?</Label>
             <Select
-              name="profession"
-              value={formData.profession}
+              name="describes"
+              value={formData.describes}
               onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, profession: value }))
+                setFormData((prev) => ({ ...prev, describes: value }))
               }
             >
-              <SelectTrigger id="profession">
+              <SelectTrigger id="describes">
                 <SelectValue placeholder="Select from list" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Doctor">Doctor</SelectItem>
-                <SelectItem value="Pharmacist">Pharmacist</SelectItem>
-                <SelectItem value="Nurse">Nurse</SelectItem>
-                <SelectItem value="Dentist">Dentist</SelectItem>
-                <SelectItem value="Optometrist">Optometrist</SelectItem>
-                <SelectItem value="Radiographer">Radiographer</SelectItem>
-                <SelectItem value="Pharmacy Technician">
-                  Pharmacy Technician
+                <SelectItem value="Member of Public">
+                  Member of Public
                 </SelectItem>
-                <SelectItem value="Sales Rep">Sales Rep</SelectItem>
-                <SelectItem value="Community Health Worker">
-                  Community Health Worker
+                <SelectItem value="Healthcare Professional">
+                  Healthcare Professional
                 </SelectItem>
-                <SelectItem value="Other">
-                  Other Healthcare Professional
+                <SelectItem value="Pharmaceutical Company">
+                  Pharmaceutical Company
                 </SelectItem>
               </SelectContent>
             </Select>
-            {formErrors.profession && (
+            {formErrors.describes && (
               <p className="text-red-600 text-xs">
-                {formErrors.profession._errors[0]}
+                {formErrors.describes._errors[0]}
               </p>
             )}
           </div>
-        )}
-        <div className="space-y-2">
-          <Label htmlFor="title">Title</Label>
-          <Select
-            name="title"
-            value={formData.title}
-            onValueChange={(value) =>
-              setFormData((prev) => ({ ...prev, title: value }))
-            }
-          >
-            <SelectTrigger id="title">
-              <SelectValue placeholder="Select from list" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Pharm.">Pharm.</SelectItem>
-              <SelectItem value="Mr.">Mr.</SelectItem>
-              <SelectItem value="Mrs.">Mrs.</SelectItem>
-              <SelectItem value="Miss.">Miss.</SelectItem>
-              <SelectItem value="Ms.">Ms.</SelectItem>
-              <SelectItem value="Dr.">Dr.</SelectItem>
-              <SelectItem value="Sir.">Sir.</SelectItem>
-              <SelectItem value="Prof.">Prof.</SelectItem>
-              <SelectItem value="Prefer not to say">
-                Prefer not to say
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="first_name">
-            First name<span className="text-red-600">*</span>
-          </Label>
-          <Input
-            id="first_name"
-            name="first_name"
-            value={formData.first_name}
-            onChange={handleInputChange}
-            placeholder="Enter your first name"
-          />
-          {formErrors.first_name && (
-            <p className="text-red-600 text-sm">
-              {formErrors.first_name._errors[0]}
-            </p>
-          )}
-        </div>
-
-        {/* Form field for 'last_name' */}
-        <div className="space-y-2">
-          <Label htmlFor="last_name">
-            Last name<span className="text-red-600">*</span>
-          </Label>
-          <Input
-            id="last_name"
-            name="last_name"
-            value={formData.last_name}
-            onChange={handleInputChange}
-            placeholder="Enter your last name"
-          />
-          {formErrors.last_name && (
-            <p className="text-red-600 text-sm">
-              {formErrors.last_name._errors[0]}
-            </p>
-          )}
-        </div>
-
-        {/* Form field for 'email' */}
-        <div className="space-y-2">
-          <Label htmlFor="email">
-            Email<span className="text-red-600">*</span>
-          </Label>
-          <Input
-            id="email"
-            name="email"
-            value={formData.email}
-            onChange={handleInputChange}
-            placeholder="Enter your email"
-          />
-          {formErrors.email && (
-            <p className="text-red-600 text-sm">
-              {formErrors.email._errors[0]}
-            </p>
-          )}
-        </div>
-
-        {/* Form field for 'phone' */}
-        <div className="space-y-2">
-          <Label htmlFor="phone">
-            Phone number<span className="text-red-600">*</span>
-          </Label>
-          <Input
-            id="phone"
-            name="phone"
-            value={formData.phone}
-            onChange={handleInputChange}
-            placeholder="Enter your phone number"
-          />
-          {formErrors.phone && (
-            <p className="text-red-600 text-sm">
-              {formErrors.phone._errors[0]}
-            </p>
-          )}
-        </div>
-        {showProfession && (
           <div className="space-y-2">
-            <Label htmlFor="company">Hospital/Company/Organisation</Label>
+            <Label htmlFor="reporter">
+              Who is reporting?<span className="text-red-600">*</span>
+            </Label>
+            <Select
+              value={formData.whois}
+              onValueChange={(value) => {
+                setFormData((prev) => ({ ...prev, whois: value }));
+                setShowProfession(value === "Healthcare professional");
+              }}
+            >
+              <SelectTrigger id="reporter">
+                <SelectValue placeholder="Select from list" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Patient">Patient</SelectItem>
+                <SelectItem value="Patient relatives">
+                  Patient relatives
+                </SelectItem>
+                <SelectItem value="Healthcare professional">
+                  Healthcare professional
+                </SelectItem>
+                <SelectItem value="Pharmaceutical company">
+                  Pharmaceutical company
+                </SelectItem>
+                <SelectItem value="Lawyer">Lawyer</SelectItem>
+              </SelectContent>
+            </Select>
+            {formErrors.whois && (
+              <p className="text-red-600 text-xs">
+                {formErrors.whois._errors[0]}
+              </p>
+            )}
+          </div>
+          {showProfession && (
+            <div className="space-y-2">
+              <Label htmlFor="profession">
+                Profession<span className="text-red-600">*</span>
+              </Label>
+              <Select
+                name="profession"
+                value={formData.profession}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, profession: value }))
+                }
+              >
+                <SelectTrigger id="profession">
+                  <SelectValue placeholder="Select from list" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Doctor">Doctor</SelectItem>
+                  <SelectItem value="Pharmacist">Pharmacist</SelectItem>
+                  <SelectItem value="Nurse">Nurse</SelectItem>
+                  <SelectItem value="Dentist">Dentist</SelectItem>
+                  <SelectItem value="Optometrist">Optometrist</SelectItem>
+                  <SelectItem value="Radiographer">Radiographer</SelectItem>
+                  <SelectItem value="Pharmacy Technician">
+                    Pharmacy Technician
+                  </SelectItem>
+                  <SelectItem value="Sales Rep">Sales Rep</SelectItem>
+                  <SelectItem value="Community Health Worker">
+                    Community Health Worker
+                  </SelectItem>
+                  <SelectItem value="Other">
+                    Other Healthcare Professional
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              {formErrors.profession && (
+                <p className="text-red-600 text-xs">
+                  {formErrors.profession._errors[0]}
+                </p>
+              )}
+            </div>
+          )}
+          <div className="space-y-2">
+            <Label htmlFor="title">Title</Label>
+            <Select
+              name="title"
+              value={formData.title}
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, title: value }))
+              }
+            >
+              <SelectTrigger id="title">
+                <SelectValue placeholder="Select from list" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Pharm.">Pharm.</SelectItem>
+                <SelectItem value="Mr.">Mr.</SelectItem>
+                <SelectItem value="Mrs.">Mrs.</SelectItem>
+                <SelectItem value="Miss.">Miss.</SelectItem>
+                <SelectItem value="Ms.">Ms.</SelectItem>
+                <SelectItem value="Dr.">Dr.</SelectItem>
+                <SelectItem value="Sir.">Sir.</SelectItem>
+                <SelectItem value="Prof.">Prof.</SelectItem>
+                <SelectItem value="Prefer not to say">
+                  Prefer not to say
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="first_name">
+              First name<span className="text-red-600">*</span>
+            </Label>
             <Input
-              id="company"
-              name="company"
-              placeholder="Enter your organization"
-              value={formData.company}
+              id="first_name"
+              name="first_name"
+              value={formData.first_name}
+              onChange={handleInputChange}
+              placeholder="Enter your first name"
+            />
+            {formErrors.first_name && (
+              <p className="text-red-600 text-sm">
+                {formErrors.first_name._errors[0]}
+              </p>
+            )}
+          </div>
+
+          {/* Form field for 'last_name' */}
+          <div className="space-y-2">
+            <Label htmlFor="last_name">
+              Last name<span className="text-red-600">*</span>
+            </Label>
+            <Input
+              id="last_name"
+              name="last_name"
+              value={formData.last_name}
+              onChange={handleInputChange}
+              placeholder="Enter your last name"
+            />
+            {formErrors.last_name && (
+              <p className="text-red-600 text-sm">
+                {formErrors.last_name._errors[0]}
+              </p>
+            )}
+          </div>
+
+          {/* Form field for 'email' */}
+          <div className="space-y-2">
+            <Label htmlFor="email">
+              Email<span className="text-red-600">*</span>
+            </Label>
+            <Input
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              placeholder="Enter your email"
+            />
+            {formErrors.email && (
+              <p className="text-red-600 text-sm">
+                {formErrors.email._errors[0]}
+              </p>
+            )}
+          </div>
+
+          {/* Form field for 'phone' */}
+          <div className="space-y-2">
+            <Label htmlFor="phone">
+              Phone number<span className="text-red-600">*</span>
+            </Label>
+            <Input
+              id="phone"
+              name="phone"
+              value={formData.phone}
+              onChange={handleInputChange}
+              placeholder="Enter your phone number"
+            />
+            {formErrors.phone && (
+              <p className="text-red-600 text-sm">
+                {formErrors.phone._errors[0]}
+              </p>
+            )}
+          </div>
+          {showProfession && (
+            <div className="space-y-2">
+              <Label htmlFor="company">Hospital/Company/Organisation</Label>
+              <Input
+                id="company"
+                name="company"
+                placeholder="Enter your organization"
+                value={formData.company}
+                onChange={handleInputChange}
+              />
+            </div>
+          )}
+          <div className="space-y-2">
+            <Label htmlFor="address">Address</Label>
+            <Input
+              id="address"
+              name="address"
+              value={formData.address}
+              onChange={handleInputChange}
+              placeholder="Enter your address"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="city">Town/City</Label>
+            <Input
+              id="city"
+              name="city"
+              value={formData.city}
+              onChange={handleInputChange}
+              placeholder="Enter your town or city"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="state">
+              State<span className="text-red-600">*</span>
+            </Label>
+            <Select
+              name="state"
+              value={formData.state}
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, state: value }))
+              }
+            >
+              <SelectTrigger id="state">
+                <SelectValue placeholder="Select State" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Abia">Abia</SelectItem>
+                <SelectItem value="Adamawa">Adamawa</SelectItem>
+                <SelectItem value="Akwa Ibom">Akwa Ibom</SelectItem>
+                <SelectItem value="Anambra">Anambra</SelectItem>
+                <SelectItem value="Bauchi">Bauchi</SelectItem>
+                <SelectItem value="Bayelsa">Bayelsa</SelectItem>
+                <SelectItem value="Benue">Benue</SelectItem>
+                <SelectItem value="Borno">Borno</SelectItem>
+                <SelectItem value="Cross River">Cross River</SelectItem>
+                <SelectItem value="Delta">Delta</SelectItem>
+                <SelectItem value="Ebonyi">Ebonyi</SelectItem>
+                <SelectItem value="Edo">Edo</SelectItem>
+                <SelectItem value="Ekiti">Ekiti</SelectItem>
+                <SelectItem value="Enugu">Enugu</SelectItem>
+                <SelectItem value="FCT">
+                  Federal Capital Territory (FCT)
+                </SelectItem>
+                <SelectItem value="Gombe">Gombe</SelectItem>
+                <SelectItem value="Imo">Imo</SelectItem>
+                <SelectItem value="Jigawa">Jigawa</SelectItem>
+                <SelectItem value="Kaduna">Kaduna</SelectItem>
+                <SelectItem value="Kano">Kano</SelectItem>
+                <SelectItem value="Katsina">Katsina</SelectItem>
+                <SelectItem value="Kebbi">Kebbi</SelectItem>
+                <SelectItem value="Kogi">Kogi</SelectItem>
+                <SelectItem value="Kwara">Kwara</SelectItem>
+                <SelectItem value="Lagos">Lagos</SelectItem>
+                <SelectItem value="Nasarawa">Nasarawa</SelectItem>
+                <SelectItem value="Niger">Niger</SelectItem>
+                <SelectItem value="Ogun">Ogun</SelectItem>
+                <SelectItem value="Ondo">Ondo</SelectItem>
+                <SelectItem value="Osun">Osun</SelectItem>
+                <SelectItem value="Oyo">Oyo</SelectItem>
+                <SelectItem value="Plateau">Plateau</SelectItem>
+                <SelectItem value="Rivers">Rivers</SelectItem>
+                <SelectItem value="Sokoto">Sokoto</SelectItem>
+                <SelectItem value="Taraba">Taraba</SelectItem>
+                <SelectItem value="Yobe">Yobe</SelectItem>
+                <SelectItem value="Zamfara">Zamfara</SelectItem>
+              </SelectContent>
+            </Select>
+            {formErrors.state && (
+              <p className="text-red-600 text-xs">
+                {formErrors.state._errors[0]}
+              </p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="postal">Postal code</Label>
+            <Input
+              id="postal"
+              name="postal_code"
+              placeholder="Enter your postal code"
+              value={formData.postal_code}
               onChange={handleInputChange}
             />
           </div>
-        )}
-        <div className="space-y-2">
-          <Label htmlFor="address">Address</Label>
-          <Input
-            id="address"
-            name="address"
-            value={formData.address}
-            onChange={handleInputChange}
-            placeholder="Enter your address"
-          />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="city">Town/City</Label>
-          <Input
-            id="city"
-            name="city"
-            value={formData.city}
-            onChange={handleInputChange}
-            placeholder="Enter your town or city"
+        <div className="flex items-center mb-4">
+          <input
+            type="checkbox"
+            id="useInFuture"
+            checked={formData?.useInFuture === 1 ? true : false} // Controlled checkbox value
+            onChange={(e) =>
+              setFormData({ ...formData, useInFuture: e.target.checked })
+            } // Update the state on change
+            className="mr-2"
           />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="state">
-            State<span className="text-red-600">*</span>
-          </Label>
-          <Select
-            name="state"
-            value={formData.state}
-            onValueChange={(value) =>
-              setFormData((prev) => ({ ...prev, state: value }))
-            }
+          <label
+            htmlFor="useInFuture"
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
-            <SelectTrigger id="state">
-              <SelectValue placeholder="Select State" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Abia">Abia</SelectItem>
-              <SelectItem value="Adamawa">Adamawa</SelectItem>
-              <SelectItem value="Akwa Ibom">Akwa Ibom</SelectItem>
-              <SelectItem value="Anambra">Anambra</SelectItem>
-              <SelectItem value="Bauchi">Bauchi</SelectItem>
-              <SelectItem value="Bayelsa">Bayelsa</SelectItem>
-              <SelectItem value="Benue">Benue</SelectItem>
-              <SelectItem value="Borno">Borno</SelectItem>
-              <SelectItem value="Cross River">Cross River</SelectItem>
-              <SelectItem value="Delta">Delta</SelectItem>
-              <SelectItem value="Ebonyi">Ebonyi</SelectItem>
-              <SelectItem value="Edo">Edo</SelectItem>
-              <SelectItem value="Ekiti">Ekiti</SelectItem>
-              <SelectItem value="Enugu">Enugu</SelectItem>
-              <SelectItem value="FCT">
-                Federal Capital Territory (FCT)
-              </SelectItem>
-              <SelectItem value="Gombe">Gombe</SelectItem>
-              <SelectItem value="Imo">Imo</SelectItem>
-              <SelectItem value="Jigawa">Jigawa</SelectItem>
-              <SelectItem value="Kaduna">Kaduna</SelectItem>
-              <SelectItem value="Kano">Kano</SelectItem>
-              <SelectItem value="Katsina">Katsina</SelectItem>
-              <SelectItem value="Kebbi">Kebbi</SelectItem>
-              <SelectItem value="Kogi">Kogi</SelectItem>
-              <SelectItem value="Kwara">Kwara</SelectItem>
-              <SelectItem value="Lagos">Lagos</SelectItem>
-              <SelectItem value="Nasarawa">Nasarawa</SelectItem>
-              <SelectItem value="Niger">Niger</SelectItem>
-              <SelectItem value="Ogun">Ogun</SelectItem>
-              <SelectItem value="Ondo">Ondo</SelectItem>
-              <SelectItem value="Osun">Osun</SelectItem>
-              <SelectItem value="Oyo">Oyo</SelectItem>
-              <SelectItem value="Plateau">Plateau</SelectItem>
-              <SelectItem value="Rivers">Rivers</SelectItem>
-              <SelectItem value="Sokoto">Sokoto</SelectItem>
-              <SelectItem value="Taraba">Taraba</SelectItem>
-              <SelectItem value="Yobe">Yobe</SelectItem>
-              <SelectItem value="Zamfara">Zamfara</SelectItem>
-            </SelectContent>
-          </Select>
-          {formErrors.state && (
-            <p className="text-red-600 text-xs">
-              {formErrors.state._errors[0]}
-            </p>
-          )}
+            Use this information in future
+          </label>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="postal">Postal code</Label>
-          <Input
-            id="postal"
-            name="postal_code"
-            placeholder="Enter your postal code"
-            value={formData.postal_code}
-            onChange={handleInputChange}
-          />
+        <div className="flex justify-between space-x-4">
+          <Button type="button" variant="outline" onClick={() => router.back()}>
+            Back
+          </Button>
+          <div className="gap-5 flex">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleSaveDraft}
+              disabled={isDraftLoading}
+            >
+              {isDraftLoading ? "Submitting..." : "Save as draft"}
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Submitting..." : "Save & Continue"}
+            </Button>
+          </div>
         </div>
-      </div>
-      <div className="flex items-center mb-4">
-        <input
-          type="checkbox"
-          id="useInFuture"
-          checked={formData.useInFuture} // Controlled checkbox value
-          onChange={(e) =>
-            setFormData({ ...formData, useInFuture: e.target.checked })
-          } // Update the state on change
-          className="mr-2"
-        />
-        <label
-          htmlFor="useInFuture"
-          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-        >
-          Use this information in future
-        </label>
-      </div>
-      <div className="flex justify-end space-x-4">
-        <Button type="button" variant="outline" onClick={() => router.back()}>
-          Back
-        </Button>
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Submitting..." : "Next"}
-        </Button>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 }
