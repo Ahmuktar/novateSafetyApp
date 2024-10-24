@@ -1,6 +1,6 @@
 "use client";
 
-import { Controller, useForm } from "react-hook-form";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,54 +12,209 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DatePicker } from "@/components/DatePicker"; // You can use your date picker component here
-import { useState } from "react";
 import { API_URL } from "@/constant";
+import { Loader2, Plus, Trash2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
+import { z } from "zod";
+import { Switch } from "@/components/ui/switch";
+
+// Define schema for medicine validation using Zod
+const medicineSchema = z.object({
+  medchar: z.string().min(1, "Medicine characterization is required"),
+  name: z.string().min(1, "Medicine name is required"),
+  manufacturer: z.string().optional(),
+  reason: z.string().optional(),
+  dose: z.string().optional(),
+  dose_unit: z.string().optional(),
+  form: z.string().optional(),
+  batch: z.string().optional(),
+  route: z.string().optional(),
+  started: z.string().min(1, "Start date is required"),
+  prevent: z.string().optional(),
+  stopped: z.string().min(1, "Stop date is required"),
+  photo: z.string().nullable(),
+});
+
+const medicinesArraySchema = z.array(medicineSchema);
+
+const initialMedicineForm = {
+  medchar: "",
+  name: "",
+  manufacturer: "",
+  reason: "",
+  dose: "",
+  dose_unit: "",
+  form: "",
+  batch: "",
+  route: "",
+  started: "",
+  prevent: "",
+  stopped: "",
+  photo: null,
+};
 
 export default function MedicinePage({ params }) {
-  const {
-    register,
-    handleSubmit,
-    control,
-    formState: { errors },
-    watch,
-  } = useForm();
   const router = useRouter();
-
-  const isFormInvalid = Object.keys(errors).length > 0;
-
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [medicines, setMedicines] = useState([]);
+  const [errors, setErrors] = useState([]);
 
-  const onSubmit = async (data) => {
+  useEffect(() => {
+    const fetchMedicines = async () => {
+      try {
+        const response = await fetch(`${API_URL}/medicines/${params.caseId}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.length > 0) {
+            setMedicines(
+              data.map((medicine) => ({
+                ...medicine,
+                started: medicine.started
+                  ? new Date(medicine.started).toISOString().split("T")[0]
+                  : "",
+                stopped: medicine.stopped
+                  ? new Date(medicine.stopped).toISOString().split("T")[0]
+                  : "",
+              }))
+            );
+          } else {
+            setMedicines([initialMedicineForm]);
+          }
+        } else {
+          setMedicines([initialMedicineForm]);
+        }
+      } catch (error) {
+        alert("Error");
+        console.error("Error fetching medicines:", error);
+        setMedicines([initialMedicineForm]);
+      }
+    };
+
+    fetchMedicines();
+  }, [params.caseId]);
+
+  const handlePictureToggle = (index, value) => {
+    const updatedMedicines = [...medicines];
+    updatedMedicines[index] = {
+      ...updatedMedicines[index],
+      photo: value ? "" : null,
+    };
+    setMedicines(updatedMedicines);
+  };
+
+  const handlePictureUpload = (index, file) => {
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const updatedMedicines = [...medicines];
+        updatedMedicines[index] = {
+          ...updatedMedicines[index],
+          photo: reader.result,
+        };
+        setMedicines(updatedMedicines);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAddMedicine = () => {
+    setMedicines([...medicines, { ...initialMedicineForm }]);
+    setErrors([...errors, {}]);
+  };
+
+  const handleRemoveMedicine = (index) => {
+    const updatedMedicines = medicines.filter((_, i) => i !== index);
+    const updatedErrors = errors.filter((_, i) => i !== index);
+    setMedicines(updatedMedicines);
+    setErrors(updatedErrors);
+  };
+
+  const handleInputChange = (index, field, value) => {
+    const updatedMedicines = [...medicines];
+    updatedMedicines[index] = {
+      ...updatedMedicines[index],
+      [field]: value,
+    };
+    setMedicines(updatedMedicines);
+  };
+
+  const validateMedicines = () => {
+    try {
+      medicinesArraySchema.parse(medicines);
+      setErrors([]);
+      return true;
+    } catch (error) {
+      const formattedErrors = error.errors.map((err) => ({
+        [err.path[1]]: err.message,
+      }));
+      setErrors(formattedErrors);
+      return false;
+    }
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!validateMedicines()) return;
+
     setIsLoading(true);
     try {
-      // Format the dates before submitting
-      const started = formatDate(data.started);
-      const stopped = formatDate(data.stopped);
+      const formattedMedicines = medicines.map((medicine) => ({
+        ...medicine,
+        started: formatDate(medicine.started),
+        stopped: formatDate(medicine.stopped),
+        case_id: params.caseId,
+      }));
 
-      const updatedData = {
-        ...data,
-        started, // Use formatted date
-        stopped, // Use formatted date
-        case_id: params.caseId, // Add the params.caseId to the data
-      };
-      // Make your API call here with form data
-      const response = await fetch(`${API_URL}/medicines`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedData),
+      console.log(formattedMedicines);
+
+      const promises = formattedMedicines.map((medicine) => {
+        const cleanMedicineData = {
+          medchar: medicine.medchar,
+          name: medicine.name,
+          manufacturer: medicine.manufacturer,
+          reason: medicine.reason,
+          dose: medicine.dose,
+          dose_unit: medicine.dose_unit,
+          form: medicine.form,
+          batch: medicine.batch,
+          route: medicine.route,
+          started: medicine.started,
+          prevent: medicine.prevent,
+          stopped: medicine.started,
+          photo: medicine.photo,
+          case_id: params.caseId,
+        };
+        const method = medicine.id ? "PUT" : "POST";
+        const url = medicine.id
+          ? `${API_URL}/medicines/${medicine.id}`
+          : `${API_URL}/medicines`;
+        return fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(cleanMedicineData),
+        });
       });
 
-      console.log("Form Data: ", updatedData);
-      const res = await response.json();
-      if (response.ok && res.id) {
-        router.push(`/case/${params.caseId}/reaction`);
-      } else {
-        throw new Error(res.message || "Failed to add patient to case");
-      }
+      const responses = await Promise.all(promises);
+      const allResponsesOk = responses.every((response) => response.ok);
+
+      if (!allResponsesOk) throw new Error("Failed to save medicines");
+
+      toast({
+        title: "Medicine Added Successfully",
+        description: "Medicines saved successfully.",
+      });
+      router.push(`/case/${params.caseId}/reaction`);
     } catch (error) {
       console.error("Error submitting form:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save medicines. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -72,20 +227,51 @@ export default function MedicinePage({ params }) {
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Controller
-            name="medchar"
-            control={control}
-            rules={{ required: "Medicine character is required" }}
-            render={({ field }) => (
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-6"
+        encType="multipart/form-data"
+      >
+        {medicines?.map((medicine, index) => (
+          <div key={index} className="border-b border-gray-200 pb-4 mb-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold">
+                Medicine {medicines.length > 1 && index + 1}
+              </h2>
+              <div className="flex space-x-2">
+                {index !== 0 && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => handleRemoveMedicine(index)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleAddMedicine}
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="medchar">
+                <Label htmlFor={`medchar-${index}`}>
                   Medicine characterization
-                  <span className="text-red-600"> *</span>
+                  <span className="text-red-600">*</span>
                 </Label>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger id="medchar">
+                <Select
+                  id={`medchar-${index}`}
+                  value={medicine.medchar}
+                  onValueChange={(value) =>
+                    handleInputChange(index, "medchar", value)
+                  }
+                >
+                  <SelectTrigger>
                     <SelectValue placeholder="Select from list" />
                   </SelectTrigger>
                   <SelectContent>
@@ -97,37 +283,42 @@ export default function MedicinePage({ params }) {
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                {errors.characterize && (
+                {errors[index]?.medchar && (
                   <p className="text-red-600 text-sm">
-                    Medicine characterization is required
+                    {errors[index].medchar}
                   </p>
                 )}
               </div>
-            )}
-          />
 
-          <div className="space-y-2">
-            <Label htmlFor="name">
-              Medicine name<span className="text-red-600"> *</span>
-            </Label>
-            <Input
-              id="name"
-              {...register("name", { required: true })}
-              placeholder="Enter medicine name"
-            />
-            {errors.name && (
-              <p className="text-red-600 text-sm">Medicine name is required</p>
-            )}
-          </div>
-
-          <Controller
-            name="manufacturer"
-            control={control}
-            render={({ field }) => (
               <div className="space-y-2">
-                <Label htmlFor="manufacturer">Name of the Manufacturer</Label>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger id="manufacturer">
+                <Label htmlFor={`name-${index}`}>
+                  Medicine name
+                  <span className="text-red-600">*</span>
+                </Label>
+                <Input
+                  id={`name-${index}`}
+                  value={medicine.name}
+                  onChange={(e) =>
+                    handleInputChange(index, "name", e.target.value)
+                  }
+                />
+                {errors[index]?.name && (
+                  <p className="text-red-600 text-sm">{errors[index].name}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor={`manufacturer-${index}`}>
+                  Name of the Manufacturer
+                </Label>
+                <Select
+                  id={`manufacturer-${index}`}
+                  value={medicine.manufacturer}
+                  onValueChange={(value) =>
+                    handleInputChange(index, "manufacturer", value)
+                  }
+                >
+                  <SelectTrigger>
                     <SelectValue placeholder="Select from list" />
                   </SelectTrigger>
                   <SelectContent>
@@ -140,29 +331,43 @@ export default function MedicinePage({ params }) {
                   </SelectContent>
                 </Select>
               </div>
-            )}
-          />
 
-          <div className="space-y-2">
-            <Label htmlFor="reason">Reason for taking medicine</Label>
-            <Input
-              id="reason"
-              {...register("reason")}
-              placeholder="Enter reason"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="dose">Medicine dose number</Label>
-            <Input id="dose" {...register("dose")} />
-          </div>
-          <Controller
-            name="dose_unit"
-            control={control}
-            render={({ field }) => (
               <div className="space-y-2">
-                <Label htmlFor="dose_unit">Dose unit (e.g. ml, mg)</Label>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger id="dose_unit">
+                <Label htmlFor={`reason-${index}`}>
+                  Reason for taking medicine
+                </Label>
+                <Input
+                  id={`reason-${index}`}
+                  value={medicine.reason}
+                  onChange={(e) =>
+                    handleInputChange(index, "reason", e.target.value)
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor={`dose-${index}`}>Medicine dose number</Label>
+                <Input
+                  id={`dose-${index}`}
+                  value={medicine.dose}
+                  onChange={(e) =>
+                    handleInputChange(index, "dose", e.target.value)
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor={`dose_unit-${index}`}>
+                  Dose unit (e.g. ml, mg)
+                </Label>
+                <Select
+                  id={`dose_unit-${index}`}
+                  value={medicine.dose_unit}
+                  onValueChange={(value) =>
+                    handleInputChange(index, "dose_unit", value)
+                  }
+                >
+                  <SelectTrigger>
                     <SelectValue placeholder="Select from list" />
                   </SelectTrigger>
                   <SelectContent>
@@ -198,19 +403,17 @@ export default function MedicinePage({ params }) {
                   </SelectContent>
                 </Select>
               </div>
-            )}
-          />
 
-          <Controller
-            name="form"
-            control={control}
-            render={({ field }) => (
               <div className="space-y-2">
-                <Label htmlFor="form" {...register("form")}>
-                  Pharmaceutical form (e.g. tablet, injection)
-                </Label>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger id="form">
+                <Label htmlFor={`form-${index}`}>Medicine form</Label>
+                <Select
+                  id={`form-${index}`}
+                  value={medicine.form}
+                  onValueChange={(value) =>
+                    handleInputChange(index, "form", value)
+                  }
+                >
+                  <SelectTrigger>
                     <SelectValue placeholder="Select from list" />
                   </SelectTrigger>
                   <SelectContent>
@@ -240,22 +443,19 @@ export default function MedicinePage({ params }) {
                   </SelectContent>
                 </Select>
               </div>
-            )}
-          />
 
-          <div className="space-y-2">
-            <Label htmlFor="batch">Batch</Label>
-            <Input id="batch" {...register("batch")} />
-          </div>
-
-          <Controller
-            name="route"
-            control={control}
-            render={({ field }) => (
               <div className="space-y-2">
-                <Label htmlFor="route">Route of administration</Label>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger id="route">
+                <Label htmlFor={`route-${index}`}>
+                  Route of administration
+                </Label>
+                <Select
+                  id={`route-${index}`}
+                  value={medicine.route}
+                  onValueChange={(value) =>
+                    handleInputChange(index, "route", value)
+                  }
+                >
+                  <SelectTrigger>
                     <SelectValue placeholder="Select from list" />
                   </SelectTrigger>
                   <SelectContent>
@@ -266,7 +466,7 @@ export default function MedicinePage({ params }) {
                     <SelectItem value="Intravenous">Intravenous</SelectItem>
                     <SelectItem value="Intramuscular">Intramuscular</SelectItem>
                     <SelectItem value="Subcutaneous">Subcutaneous</SelectItem>
-                    <SelectItem value="Intradermal">Intradermal</SelectItem>
+                    <SelectItem value=" Intradermal">Intradermal</SelectItem>
                     <SelectItem value="Nasal">Nasal</SelectItem>
                     <SelectItem value="Pulmonary">Pulmonary</SelectItem>
                     <SelectItem value="Topical">Topical</SelectItem>
@@ -286,88 +486,95 @@ export default function MedicinePage({ params }) {
                   </SelectContent>
                 </Select>
               </div>
-            )}
-          />
 
-          <div className="space-y-2">
-            <Label htmlFor="started">
-              Start Date<span className="text-red-600"> *</span>
-            </Label>
-            <Input
-              type="date"
-              id="started"
-              {...register("started", { required: true })}
-            />
-            {errors.started && (
-              <p className="text-red-600 text-sm">Start date is required</p>
-            )}
-          </div>
-
-          <Controller
-            name="prevent"
-            control={control}
-            rules={{ required: false }}
-            render={({ field }) => (
               <div className="space-y-2">
-                <Label htmlFor="prevent">
-                  Did the reaction prevent continuation of the medications?
+                <Label htmlFor={`batch-${index}`}>Batch number</Label>
+                <Input
+                  id={`batch-${index}`}
+                  value={medicine.batch}
+                  onChange={(e) =>
+                    handleInputChange(index, "batch", e.target.value)
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor={`started-${index}`}>
+                  Date medicine started
+                  <span className="text-red-600">*</span>
                 </Label>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger id="prevent">
-                    <SelectValue placeholder="Select from list" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Drug withdrawn">
-                      Drug withdrawn
-                    </SelectItem>
-                    <SelectItem value="Dose increased">
-                      Dose increased
-                    </SelectItem>
-                    <SelectItem value="Dose reduced">Dose reduced</SelectItem>
-                    <SelectItem value="Dose not changed">
-                      Dose not changed
-                    </SelectItem>
-                    <SelectItem value="Unknown">Unknown</SelectItem>
-                    <SelectItem value="Not applicable">
-                      Not applicable
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.prevent && (
-                  <p className="text-red-600 text-sm">Prevent is required</p>
+                <Input
+                  id={`started-${index}`}
+                  type="date"
+                  value={medicine.started}
+                  onChange={(e) =>
+                    handleInputChange(index, "started", e.target.value)
+                  }
+                />
+                {errors[index]?.started && (
+                  <p className="text-red-600 text-sm">
+                    {errors[index].started}
+                  </p>
                 )}
               </div>
-            )}
-          />
 
-          <div className="space-y-2">
-            <Label htmlFor="stopped">
-              Stopped Date<span className="text-red-600"> *</span>
-            </Label>
-            <Input
-              type="date"
-              id="stopped"
-              {...register("stopped", { required: true })}
-              dateFormat="yyyy-MM-dd"
-            />
-            {errors.stopped && (
-              <p className="text-red-600 text-sm">Stopped date is required</p>
-            )}
+              <div className="space-y-2">
+                <Label htmlFor={`stopped-${index}`}>
+                  Date medicine stopped
+                  <span className="text-red-600">*</span>
+                </Label>
+                <Input
+                  id={`stopped-${index}`}
+                  type="date"
+                  value={medicine.stopped}
+                  onChange={(e) =>
+                    handleInputChange(index, "stopped", e.target.value)
+                  }
+                />
+                {errors[index]?.stopped && (
+                  <p className="text-red-600 text-sm">
+                    {errors[index].stopped}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id={`hasPicture-${index}`}
+                    checked={medicine.photo !== null}
+                    onCheckedChange={(value) =>
+                      handlePictureToggle(index, value)
+                    }
+                  />
+                  <Label htmlFor={`hasPicture-${index}`}>Add Picture</Label>
+                </div>
+                {medicine.photo !== null && (
+                  <div className="space-y-2">
+                    <Input
+                      id={`picture-${index}`}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) =>
+                        handlePictureUpload(index, e.target.files[0])
+                      }
+                    />
+                    {medicine.photo && (
+                      <img
+                        src={medicine.photo}
+                        alt="Medicine"
+                        className="max-w-xs max-h-40 object-contain"
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+        ))}
 
-        <div className="flex justify-end space-x-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.push(`/case/${params.caseId}/patient`)}
-          >
-            Back
-          </Button>
-          <Button type="submit" disabled={isLoading || isFormInvalid}>
-            {isLoading ? "Submitting..." : "Next"}
-          </Button>
-        </div>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Submit"}
+        </Button>
       </form>
     </div>
   );

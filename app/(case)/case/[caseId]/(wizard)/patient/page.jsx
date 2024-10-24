@@ -20,7 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 // Zod schema for validation
 const patientSchema = z.object({
   initials: z.string().min(1, "Initials are required"),
-  age: z.string().min(1, "Age is required"),
+  age: z.number().min(1, "Age is required"),
   age_unit: z.string().min(1, "Age unit is required"),
   age_group: z.string().optional(),
   sex: z.string().min(1, "Sex is required"),
@@ -96,8 +96,8 @@ export default function PatientPage({ params }) {
     }
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const handleSubmit = async () => {
+    // event.preventDefault();
     setIsLoading(true);
     setFormErrors({});
 
@@ -113,7 +113,7 @@ export default function PatientPage({ params }) {
       // Clean up the form data
       const cleanedFormData = {
         initials: formData.initials,
-        age: formData.age,
+        age: parseInt(formData.age),
         age_unit: formData.age_unit,
         age_group: formData.age_group,
         sex: formData.sex,
@@ -168,7 +168,7 @@ export default function PatientPage({ params }) {
       });
     } catch (error) {
       toast({
-        title: "Save draft failed",
+        title: `Save draft failed${error}`,
         description:
           "An unexpected error occurred. Please check your connection or try again later.",
         variant: "destructive",
