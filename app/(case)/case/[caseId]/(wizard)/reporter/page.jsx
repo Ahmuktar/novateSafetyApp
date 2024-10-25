@@ -15,6 +15,7 @@ import {
 import { API_URL } from "@/constant";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
+import Loader from "@/components/Loader";
 
 // Zod schema for validation
 const reporterSchema = z.object({
@@ -60,6 +61,7 @@ export default function ReporterPage({ params }) {
   // Fetch existing reporter data if it exists
   useEffect(() => {
     const fetchReporter = async () => {
+      setIsLoading(true);
       try {
         const response = await fetch(
           `${API_URL}/reporters/${params?.caseId}/case`
@@ -92,6 +94,8 @@ export default function ReporterPage({ params }) {
         }
       } catch (error) {
         console.error("Error fetching reporter:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -205,28 +209,37 @@ export default function ReporterPage({ params }) {
     setIsDraftLoading(true);
 
     try {
-      const updateResponse = await fetch(`${API_URL}/cases/${params.caseId}`, {
+      const isExistingReporter =
+        formData.email !== "" &&
+        formData.first_name !== "" &&
+        formData.last_name !== "";
+
+      const url = isExistingReporter
+        ? `${API_URL}/reporters/${params?.caseId}`
+        : `${API_URL}/reporters`;
+      const method = isExistingReporter ? "PUT" : "POST";
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...formData, case_id: params?.caseId }),
+      });
+
+      if (!response.ok) throw new Error("Failed to submit reporter.");
+
+      const data = await response.json();
+
+      const updateResponse = await fetch(`${API_URL}/cases/${params?.caseId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "draft" }),
       });
 
-      if (updateResponse.ok) {
-        toast({
-          title: "Draft saved successfully!",
-          description: "Your changes have been saved as a draft.",
-        });
-      } else {
-        const updateData = await updateResponse.json();
-        toast({
-          title: "Unable to save draft",
-          description:
-            updateData.message ||
-            "There was an issue saving your draft. Please try again.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Draft saved successfully!",
+        description: "Your changes have been saved as a draft.",
+      });
     } catch (error) {
+      console.log(error);
       toast({
         title: "Save draft failed",
         description:
@@ -238,13 +251,13 @@ export default function ReporterPage({ params }) {
     }
   };
 
+  if (isLoading || isDraftLoading) {
+    return <Loader />;
+  }
+
   return (
     <div className="relative">
-      {isLoading && (
-        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Loader2 className="w-8 h-8 text-white animate-spin" />
-        </div>
-      )}
+      {isLoading || (isDraftLoading && <Loader />)}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

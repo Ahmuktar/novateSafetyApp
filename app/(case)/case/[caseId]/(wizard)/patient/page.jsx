@@ -16,6 +16,7 @@ import { z } from "zod";
 import { API_URL } from "@/constant";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import Loader from "@/components/Loader";
 
 // Zod schema for validation
 const patientSchema = z.object({
@@ -48,6 +49,7 @@ export default function PatientPage({ params }) {
 
   useEffect(() => {
     const fetchPatient = async () => {
+      setIsLoading(true);
       try {
         const response = await fetch(`${API_URL}/patients/${params.caseId}`);
         if (response.ok) {
@@ -61,6 +63,8 @@ export default function PatientPage({ params }) {
         }
       } catch (error) {
         console.error("Error fetching patient:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -96,8 +100,8 @@ export default function PatientPage({ params }) {
     }
   };
 
-  const handleSubmit = async () => {
-    // event.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setIsLoading(true);
     setFormErrors({});
 
@@ -145,6 +149,8 @@ export default function PatientPage({ params }) {
     } catch (error) {
       console.error("Error submitting form:", error);
       setIsLoading(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -161,7 +167,32 @@ export default function PatientPage({ params }) {
     }
 
     try {
-      await handleSubmit();
+      const cleanedFormData = {
+        initials: formData.initials,
+        age: parseInt(formData.age),
+        age_unit: formData.age_unit,
+        age_group: formData.age_group,
+        sex: formData.sex,
+        weight: formData.weight,
+        height: formData.height,
+        ethnicity: formData.ethnicity,
+        case_id: params.caseId,
+      };
+
+      const url = isExistingPatient
+        ? `${API_URL}/patients/${params?.caseId}`
+        : `${API_URL}/patients`;
+      const method = isExistingPatient ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cleanedFormData),
+      });
+
+      if (!response.ok) throw new Error("Failed to submit patient.");
+
+      const data = await response.json();
       toast({
         title: "Draft saved successfully!",
         description: "Your changes have been saved as a draft.",
@@ -178,13 +209,13 @@ export default function PatientPage({ params }) {
     }
   };
 
+  if (isLoading) {
+    return <Loader />;
+  }
+
   return (
     <div className="relative">
-      {isLoading && (
-        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Loader2 className="w-8 h-8 text-white animate-spin" />
-        </div>
-      )}
+      {isLoading || (isDraftLoading && <Loader />)}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

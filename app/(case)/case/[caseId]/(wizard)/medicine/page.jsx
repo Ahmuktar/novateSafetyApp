@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
 import { z } from "zod";
 import { Switch } from "@/components/ui/switch";
+import Loader from "@/components/Loader";
 
 // Define schema for medicine validation using Zod
 const medicineSchema = z.object({
@@ -63,6 +64,7 @@ export default function MedicinePage({ params }) {
 
   useEffect(() => {
     const fetchMedicines = async () => {
+      setIsLoading(true);
       try {
         const response = await fetch(`${API_URL}/medicines/${params.caseId}`);
         if (response.ok) {
@@ -86,9 +88,10 @@ export default function MedicinePage({ params }) {
           setMedicines([initialMedicineForm]);
         }
       } catch (error) {
-        alert("Error");
         console.error("Error fetching medicines:", error);
         setMedicines([initialMedicineForm]);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -167,8 +170,6 @@ export default function MedicinePage({ params }) {
         case_id: params.caseId,
       }));
 
-      console.log(formattedMedicines);
-
       const promises = formattedMedicines.map((medicine) => {
         const cleanMedicineData = {
           medchar: medicine.medchar,
@@ -219,13 +220,74 @@ export default function MedicinePage({ params }) {
     }
   };
 
+  const [isDraftLoading, setIsDraftLoading] = useState(false);
+  const handleSaveDraft = async () => {
+    setIsDraftLoading(true);
+    try {
+      const formattedMedicines = medicines.map((medicine) => ({
+        ...medicine,
+        started: formatDate(medicine.started),
+        stopped: formatDate(medicine.stopped),
+        case_id: params.caseId,
+      }));
+
+      const promises = formattedMedicines.map((medicine) => {
+        const cleanMedicineData = {
+          medchar: medicine.medchar,
+          name: medicine.name,
+          manufacturer: medicine.manufacturer,
+          reason: medicine.reason,
+          dose: medicine.dose,
+          dose_unit: medicine.dose_unit,
+          form: medicine.form,
+          batch: medicine.batch,
+          route: medicine.route,
+          started: medicine.started,
+          prevent: medicine.prevent,
+          stopped: medicine.started,
+          photo: medicine.photo,
+          case_id: params.caseId,
+        };
+        const method = medicine.id ? "PUT" : "POST";
+        const url = medicine.id
+          ? `${API_URL}/medicines/${medicine.id}`
+          : `${API_URL}/medicines`;
+        return fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(cleanMedicineData),
+        });
+      });
+
+      const responses = await Promise.all(promises);
+      const allResponsesOk = responses.every((response) => response.ok);
+
+      if (!allResponsesOk) throw new Error("Failed to save medicines");
+
+      toast({
+        title: "Draft saved successfully!",
+        description: "Your changes have been saved as a draft.",
+      });
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      toast({
+        title: `Save draft failed${error}`,
+        description:
+          "An unexpected error occurred. Please check your connection or try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDraftLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return <Loader />;
+  }
+
   return (
     <div className="relative">
-      {isLoading && (
-        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Loader2 className="w-8 h-8 text-white animate-spin" />
-        </div>
-      )}
+      {isLoading || (isDraftLoading && <Loader />)}
 
       <form
         onSubmit={handleSubmit}
@@ -572,9 +634,29 @@ export default function MedicinePage({ params }) {
           </div>
         ))}
 
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Submit"}
-        </Button>
+        <div className="flex justify-between space-x-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.push(`/case/${params.caseId}/patient`)}
+            disabled={isLoading}
+          >
+            Back
+          </Button>
+          <div className="gap-5 flex">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleSaveDraft}
+              disabled={isDraftLoading}
+            >
+              {isDraftLoading ? "Submitting..." : "Save as draft"}
+            </Button>
+            <Button type="submit" onClick={handleSubmit} disabled={isLoading}>
+              {isLoading ? "Submitting..." : "Save & Continue"}
+            </Button>
+          </div>
+        </div>
       </form>
     </div>
   );

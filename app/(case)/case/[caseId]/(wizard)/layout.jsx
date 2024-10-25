@@ -3,6 +3,8 @@
 import { usePathname } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, Circle } from "lucide-react";
+import { Suspense } from "react";
+import Loader from "@/components/Loader";
 
 const steps = [
   {
@@ -139,7 +141,7 @@ export default function CaseLayout({ children, params }) {
               <p className="text-gray-500 text-sm mb-6">
                 {steps[currentStepIndex].description}
               </p>
-              {children}
+              <Suspense fallback={<Loader />}>{children}</Suspense>
             </div>
           </div>
         </CardContent>

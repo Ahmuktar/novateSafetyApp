@@ -18,6 +18,7 @@ import { API_URL } from "@/constant";
 import { formatDate } from "@/lib/utils";
 import SummaryCard from "@/components/SummaryCard";
 import { useToast } from "@/hooks/use-toast";
+import Loader from "@/components/Loader";
 
 export default function SummaryPage({ params }) {
   const { toast } = useToast();
@@ -98,18 +99,14 @@ export default function SummaryPage({ params }) {
   };
 
   return (
-    <div className="container mx-auto py-8 w-full lg:max-w-4xl">
-      <Suspense
-        fallback={
-          <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto my-10" />
-        }
-      >
+    <div className="relative">
+      {isLoading && <Loader />}
+      <Suspense fallback={<Loader />}>
         <SummaryCard caseId={caseId} />
       </Suspense>
-
       <div className="flex justify-end space-x-4">
         <Button
-          variant="outline"
+          variant="secondary"
           onClick={handleSaveDraft}
           disabled={isLoading}
         >

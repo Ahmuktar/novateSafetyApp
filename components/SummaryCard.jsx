@@ -44,7 +44,7 @@ const SummaryCard = ({ caseId }) => {
     <div>
       <Card className="mb-8">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-2xl">Reporter Information</CardTitle>
+          <CardTitle className="text-lg">Reporter Information</CardTitle>
           <Button
             variant="ghost"
             onClick={() => router.push(`/case/${caseId}/reporter`)}
@@ -104,7 +104,7 @@ const SummaryCard = ({ caseId }) => {
 
       <Card className="mb-8">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-2xl">Patient Information</CardTitle>
+          <CardTitle className="text-lg">Patient Information</CardTitle>
           <Button
             variant="ghost"
             onClick={() => router.push(`/case/${caseId}/patient`)}
@@ -152,7 +152,7 @@ const SummaryCard = ({ caseId }) => {
 
       <Card className="mb-8">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-2xl">Medicine Information</CardTitle>
+          <CardTitle className="text-lg">Medicine Information</CardTitle>
           <Button
             variant="ghost"
             onClick={() => router.push(`/case/${caseId}/medicine`)}
@@ -178,7 +178,7 @@ const SummaryCard = ({ caseId }) => {
                   <div>
                     <p className="text-sm text-muted-foreground">Dose</p>
                     <p className="font-medium">
-                      {medicine?.dose} {medicine?.doseUnit}
+                      {medicine?.dose} {medicine?.dose_unit}
                     </p>
                   </div>
                   <div>
@@ -208,7 +208,7 @@ const SummaryCard = ({ caseId }) => {
 
       <Card className="mb-8">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-2xl">Reaction Information</CardTitle>
+          <CardTitle className="text-lg">Reaction Information</CardTitle>
           <Button
             variant="ghost"
             onClick={() => router.push(`/case/${caseId}/reaction`)}
@@ -229,27 +229,17 @@ const SummaryCard = ({ caseId }) => {
                 <div className="grid grid-cols-2 gap-4 ml-7">
                   <div>
                     <p className="text-sm text-muted-foreground">Start Date</p>
-                    <p className="font-medium">
-                      {formatDate(reaction?.reactionStart)}
-                    </p>
+                    <p className="font-medium">{reaction?.react_start}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">End Date</p>
-                    <p className="font-medium">
-                      {formatDate(reaction?.reactionStop)}
-                    </p>
+                    <p className="font-medium">{reaction?.react_stop}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">State</p>
-                    <Badge variant="default">{reaction?.reactionState}</Badge>
+                    <Badge variant="default">{reaction?.react_state}</Badge>
                   </div>
-
-                  <div>
-                    <p className="text-sm text-muted-foreground">History</p>
-                    <p>{reaction?.history}</p>
-                  </div>
-
-                  <div className="col-span-2">
+                  <div className="">
                     <p className="text-sm text-muted-foreground">Serious</p>
                     <div className="flex flex-wrap gap-2 mt-1">
                       {reaction?.seriousness.map((effect, effectIndex) => (
@@ -258,6 +248,10 @@ const SummaryCard = ({ caseId }) => {
                         </Badge>
                       ))}
                     </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">History</p>
+                    <p>{reaction?.history}</p>
                   </div>
                 </div>
                 {index < caseData.reactions.length - 1 && (

@@ -1,15 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Accordion,
@@ -17,101 +10,76 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { ArrowLeft, Download, Printer } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Download,
+  Pill,
+  Printer,
+} from "lucide-react";
 import Link from "next/link";
+import { API_URL } from "@/constant";
+import Loader from "@/components/Loader";
+import { capitalize } from "@/lib/utils";
 
-// Fake data for a detailed case report with multiple drugs and reactions
-const caseReport = {
-  id: "143455",
-  status: "submitted",
-  submissionDate: "2023-06-17",
-  lastUpdated: "2023-06-17",
-  reporter: {
-    name: "Dr. Jane Smith",
-    profession: "Pharmacist",
-    organization: "City General Hospital",
-    email: "jane.smith@cityhospital.com",
-    phone: "+1 (555) 123-4567",
-  },
-  patient: {
-    initials: "AS",
-    age: 45,
-    ageUnit: "years",
-    sex: "Female",
-    weight: 70,
-    weightUnit: "kg",
-    height: 165,
-    heightUnit: "cm",
-    medicalHistory: "Type 2 Diabetes, Hypertension",
-  },
-  drugs: [
-    {
-      name: "Metformin",
-      brandName: "Glucophage",
-      manufacturer: "Bristol-Myers Squibb",
-      batchNumber: "MET20230501",
-      dosage: "1000",
-      dosageUnit: "mg",
-      frequency: "twice daily",
-      route: "Oral",
-      startDate: "2023-05-01",
-      endDate: "2023-06-15",
-      indication: "Type 2 Diabetes management",
-    },
-    {
-      name: "Lisinopril",
-      brandName: "Zestril",
-      manufacturer: "AstraZeneca",
-      batchNumber: "LIS20230401",
-      dosage: "10",
-      dosageUnit: "mg",
-      frequency: "once daily",
-      route: "Oral",
-      startDate: "2023-04-01",
-      endDate: "Ongoing",
-      indication: "Hypertension management",
-    },
-  ],
-  reactions: [
-    {
-      description: "Severe nausea and abdominal pain",
-      startDate: "2023-06-10",
-      endDate: "2023-06-15",
-      outcome: "Recovered",
-      seriousness: ["Hospitalization"],
-      interventions: [
-        "Temporary discontinuation of Metformin",
-        "IV fluid administration",
-        "Antiemetic medication",
-      ],
-    },
-    {
-      description: "Persistent dry cough",
-      startDate: "2023-05-15",
-      endDate: "Ongoing",
-      outcome: "Not recovered",
-      seriousness: ["Medically significant"],
-      interventions: ["Monitoring", "Considering alternative medication"],
-    },
-  ],
-  additionalInfo:
-    "Patient was admitted to the hospital for 2 days due to severe dehydration caused by persistent nausea and vomiting. Symptoms improved after discontinuation of Metformin. The persistent dry cough is suspected to be related to Lisinopril use.",
-};
+export default function ViewReport({ params }) {
+  const [caseData, setCaseData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-export default function ViewReport() {
+  useEffect(() => {
+    const getCaseDetails = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(
+          `${API_URL}/cases/${params.caseId}/details`
+        );
+        const data = await response.json();
+        setCaseData(data);
+      } catch (error) {
+        console.error("Error fetching case details:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    getCaseDetails();
+  }, [params.caseId]);
+
   const handlePrint = () => {
     window.print();
   };
 
   const handleDownload = () => {
-    // In a real application, this would generate and download a PDF or other formatted report
     alert("Downloading report... (This is a placeholder action)");
   };
 
+  if (isLoading) {
+    return <Loader />;
+  }
+  console.log(caseData);
+  if (!caseData) {
+    return (
+      <div className="w-full h-full flex justify-center items-center bg-card text-card-foreground rounded-lg p-6 mb-8">
+        <div className="text-center">
+          <h3 className="text-6xl font-bold text-primary mb-4">Oops!</h3>
+          <p className="text-xl mb-6">Case #{params.caseId} not found.</p>
+          <Button variant="outline" asChild>
+            <Link href="/case">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Dashboard
+            </Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="container mx-auto py-8 px-4 max-w-4xl">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Adverse Drug Reaction Report</h1>
+    <div className="container mx-auto py-4 px-2 lg:py-8 lg:px-4 max-w-4xl">
+      <div className="flex flex-col lg:flex-row justify-between items-center mb-6">
+        <h1 className="text-lg lg:text-3xl font-bold">
+          Adverse Drug Reaction Report
+        </h1>
         <div className="flex space-x-2">
           <Button variant="outline" onClick={handlePrint}>
             <Printer className="mr-2 h-4 w-4" />
@@ -127,13 +95,14 @@ export default function ViewReport() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex justify-between items-center">
-            <span>Case #{caseReport.id}</span>
-            <Badge>Submitted</Badge>
+            <span>Case #{caseData.case.case_id}</span>
+            <Badge>{capitalize(caseData.case.status)}</Badge>
           </CardTitle>
-          <CardDescription>
-            Submitted on {caseReport.submissionDate} | Last updated:{" "}
-            {caseReport.lastUpdated}
-          </CardDescription>
+          <p className="text-sm text-muted-foreground">
+            Submitted on {new Date(caseData.case.date).toLocaleDateString()} |
+            Last updated:{" "}
+            {new Date(caseData.case.updatedDate).toLocaleDateString()}
+          </p>
         </CardHeader>
       </Card>
 
@@ -145,23 +114,45 @@ export default function ViewReport() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Name</p>
-              <p className="font-medium">{caseReport.reporter.name}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Profession</p>
-              <p className="font-medium">{caseReport.reporter.profession}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Organization</p>
-              <p className="font-medium">{caseReport.reporter.organization}</p>
+              <p className="font-medium">
+                {caseData.reporter.first_name} {caseData.reporter.last_name}
+              </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Email</p>
-              <p className="font-medium">{caseReport.reporter.email}</p>
+              <p className="font-medium">{caseData.reporter?.email}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Phone</p>
-              <p className="font-medium">{caseReport.reporter.phone}</p>
+              <p className="font-medium">{caseData.reporter?.phone}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Profession</p>
+              <p className="font-medium">{caseData.reporter?.profession}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Title</p>
+              <p className="font-medium">{caseData.reporter?.title}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Who is reporting</p>
+              <p className="font-medium">{caseData.reporter?.whois}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Company</p>
+              <p className="font-medium">{caseData.reporter?.company}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Address</p>
+              <p className="font-medium">{caseData.reporter?.address}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">City</p>
+              <p className="font-medium">{caseData.reporter?.city}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">State</p>
+              <p className="font-medium">{caseData.reporter?.state}</p>
             </div>
           </div>
         </CardContent>
@@ -175,33 +166,35 @@ export default function ViewReport() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Initials</p>
-              <p className="font-medium">{caseReport.patient.initials}</p>
+              <p className="font-medium">{caseData.patient?.initials}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Sex</p>
+              <p className="font-medium">{caseData.patient?.sex}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Age</p>
               <p className="font-medium">
-                {caseReport.patient.age} {caseReport.patient.ageUnit}
+                {caseData.patient?.age} {caseData.patient?.ageUnit}s
               </p>
             </div>
+
             <div>
-              <p className="text-sm text-muted-foreground">Sex</p>
-              <p className="font-medium">{caseReport.patient.sex}</p>
+              <p className="text-sm text-muted-foreground">Age Group</p>
+              <p className="font-medium">{caseData.patient?.ageGroup}</p>
             </div>
+
             <div>
               <p className="text-sm text-muted-foreground">Weight</p>
-              <p className="font-medium">
-                {caseReport.patient.weight} {caseReport.patient.weightUnit}
-              </p>
+              <p className="font-medium">{caseData.patient?.weight} kg</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Height</p>
-              <p className="font-medium">
-                {caseReport.patient.height} {caseReport.patient.heightUnit}
-              </p>
+              <p className="font-medium">{caseData.patient?.height} cm</p>
             </div>
-            <div className="col-span-2">
-              <p className="text-sm text-muted-foreground">Medical History</p>
-              <p className="font-medium">{caseReport.patient.medicalHistory}</p>
+            <div>
+              <p className="text-sm text-muted-foreground">Ethnicity</p>
+              <p className="font-medium">{caseData.patient?.ethnicity}</p>
             </div>
           </div>
         </CardContent>
@@ -213,58 +206,55 @@ export default function ViewReport() {
         </CardHeader>
         <CardContent>
           <Accordion type="single" collapsible className="w-full">
-            {caseReport.drugs.map((drug, index) => (
-              <AccordionItem value={`drug-${index}`} key={index}>
-                <AccordionTrigger>{drug.name}</AccordionTrigger>
+            {caseData.medicines.map((medicine, index) => (
+              <AccordionItem value={`medicine-${index}`} key={index}>
+                <AccordionTrigger>
+                  <div className="flex items-center mb-2">
+                    <Pill className="mr-2 h-5 w-5 text-primary" />
+                    <h4 className="text-base font-semibold">
+                      {medicine?.name}
+                    </h4>
+                  </div>
+                </AccordionTrigger>
                 <AccordionContent>
-                  <div className="grid grid-cols-2 gap-4 pt-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        Brand Name
-                      </p>
-                      <p className="font-medium">{drug.brandName}</p>
-                    </div>
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-muted-foreground">
                         Manufacturer
                       </p>
-                      <p className="font-medium">{drug.manufacturer}</p>
+                      <p className="font-medium">{medicine.manufacturer}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">
-                        Batch Number
-                      </p>
-                      <p className="font-medium">{drug.batchNumber}</p>
+                      <p className="text-sm text-muted-foreground">Batch</p>
+                      <p className="font-medium">{medicine.batch}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Dosage</p>
+                      <p className="text-sm text-muted-foreground">Dose</p>
                       <p className="font-medium">
-                        {drug.dosage} {drug.dosageUnit}
+                        {medicine.dose} {medicine.dose_unit}
                       </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Frequency</p>
-                      <p className="font-medium">{drug.frequency}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Route</p>
-                      <p className="font-medium">{drug.route}</p>
+                      <p className="font-medium">{medicine.route}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">
                         Start Date
                       </p>
-                      <p className="font-medium">{drug.startDate}</p>
+                      <p className="font-medium">
+                        {new Date(medicine.started).toLocaleDateString()}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">End Date</p>
-                      <p className="font-medium">{drug.endDate}</p>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="text-sm text-muted-foreground">
-                        Indication
+                      <p className="text-sm text-muted-foreground">Stop Date</p>
+                      <p className="font-medium">
+                        {new Date(medicine.stopped).toLocaleDateString()}
                       </p>
-                      <p className="font-medium">{drug.indication}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Reason</p>
+                      <p className="font-medium">{medicine.reason}</p>
                     </div>
                   </div>
                 </AccordionContent>
@@ -280,61 +270,51 @@ export default function ViewReport() {
         </CardHeader>
         <CardContent>
           <Accordion type="single" collapsible className="w-full">
-            {caseReport.reactions.map((reaction, index) => (
+            {caseData.reactions.map((reaction, index) => (
               <AccordionItem value={`reaction-${index}`} key={index}>
-                <AccordionTrigger>{reaction.description}</AccordionTrigger>
+                <AccordionTrigger>
+                  <div className="flex items-center mb-2">
+                    <AlertTriangle className="mr-2 h-5 w-5 text-destructive" />
+                    <h4 className="text-base font-semibold">
+                      {reaction?.reaction}
+                    </h4>
+                  </div>
+                </AccordionTrigger>
                 <AccordionContent>
                   <div className="grid grid-cols-2 gap-4 pt-4">
                     <div>
                       <p className="text-sm text-muted-foreground">
                         Start Date
                       </p>
-                      <p className="font-medium">{reaction.startDate}</p>
+                      <p className="font-medium">{reaction?.react_start}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">End Date</p>
-                      <p className="font-medium">{reaction.endDate}</p>
+                      <p className="font-medium">{reaction?.react_stop}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Outcome</p>
-                      <p className="font-medium">{reaction.outcome}</p>
+                      <p className="text-sm text-muted-foreground">State</p>
+                      <Badge variant="default">{reaction?.react_state}</Badge>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        Seriousness
-                      </p>
+                    <div className="">
+                      <p className="text-sm text-muted-foreground">Serious</p>
                       <div className="flex flex-wrap gap-2 mt-1">
-                        {reaction.seriousness.map((item, idx) => (
-                          <Badge key={idx} variant="outline">
-                            {item}
+                        {reaction?.seriousness.map((effect, effectIndex) => (
+                          <Badge key={effectIndex} variant="default">
+                            {effect}
                           </Badge>
                         ))}
                       </div>
                     </div>
-                    <div className="col-span-2">
-                      <p className="text-sm text-muted-foreground">
-                        Interventions
-                      </p>
-                      <ul className="list-disc list-inside font-medium">
-                        {reaction.interventions.map((item, idx) => (
-                          <li key={idx}>{item}</li>
-                        ))}
-                      </ul>
+                    <div>
+                      <p className="text-sm text-muted-foreground">History</p>
+                      <p>{reaction?.history}</p>
                     </div>
                   </div>
                 </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
-        </CardContent>
-      </Card>
-
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Additional Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>{caseReport.additionalInfo}</p>
         </CardContent>
       </Card>
 
