@@ -320,7 +320,7 @@ export default function ViewReport({ params }) {
 
       <div className="flex justify-between items-center mt-8">
         <Button variant="outline" asChild>
-          <Link href="/dashboard">
+          <Link href="/cases">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Dashboard
           </Link>

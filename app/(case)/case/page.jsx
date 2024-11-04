@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -24,6 +24,7 @@ import {
   FileText,
   Search,
 } from "lucide-react";
+import { API_URL } from "@/constant";
 
 // Fake data for the dashboard
 const fakeCases = [
@@ -82,6 +83,28 @@ const fakeCases = [
 export default function Dashboard() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
+  const [caseData, setCaseData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const getCaseDetails = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`${API_URL}/cases/user-dashboard`);
+        const data = await response.json();
+        console.log(data);
+        // setCaseData(data.cases);
+      } catch (error) {
+        console.error("Error fetching case details:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    getCaseDetails();
+  }, []);
+
+  console.log(caseData);
 
   const filteredCases = fakeCases.filter(
     (case_) =>

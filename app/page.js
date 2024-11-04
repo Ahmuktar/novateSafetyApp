@@ -18,7 +18,6 @@ export default function page() {
         <main className="flex-grow flex flex-col h-full justify-center items-center px-4 sm:px-6 lg:px-8">
           <WelcomePage />
         </main>
-        <Footer />
       </div>
     </div>
   );

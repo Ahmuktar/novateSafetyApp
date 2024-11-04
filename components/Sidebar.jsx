@@ -1,89 +1,64 @@
-// components/Sidebar.js
 "use client";
-
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  PlusIcon,
-  PanelRightOpen,
-  PanelLeftOpen,
-  HomeIcon,
-  MessageCircleWarning,
-} from "lucide-react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
-import SidebarListItem from "./SidebarListItem";
+import { Home, FileText, List, X } from "lucide-react";
+import { Button } from "./ui/button";
 import Image from "next/image";
 
-const sidebarLinks = [
-  { href: "", icon: HomeIcon, label: "Home" },
-  { href: "/case/new", icon: PlusIcon, label: "New Case" },
-  { href: "/case", icon: MessageCircleWarning, label: "Cases" },
-];
-
-export default function Sidebar() {
+const Sidebar = ({ isOpen, onClose }) => {
   const pathname = usePathname();
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const toggleSidebar = () => setIsCollapsed(!isCollapsed);
+  const links = [
+    { href: "/", label: "Home", icon: Home },
+    { href: "/cases", label: "Cases", icon: List },
+  ];
 
   return (
-    <div className="flex h-screen max-sm:hidden">
-      <div
-        className={`
-          bg-background  min-h-0 border-r max-md:hidden transition-all duration-300 ease-in-out
-          ${isCollapsed ? "hidden" : "w-64"}
-        `}
-      >
-        <div className="flex flex-col h-full">
-          <div className="p-4">
-            <Image
-              src="/images/logo2.png"
-              width={200}
-              height={200}
-              alt="Logo"
-              className="dark:hidden"
-            />
-            <Image
-              src="/images/logo.png"
-              width={200}
-              height={200}
-              alt="Logo"
-              className="dark:block hidden"
-            />
-          </div>
-
-          <div className="p-4">
-            {sidebarLinks.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <SidebarListItem
-                  key={item.href}
-                  href={item.href}
-                  icon={item.icon}
-                  label={item.label}
-                  isActive={isActive}
-                />
-              );
-            })}
-          </div>
-        </div>
+    <div
+      className={`${
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      } transform transition-transform duration-300 ease-in-out fixed inset-y-0 left-0 z-30 w-64 bg-gray-100 text-gray-800 overflow-y-auto lg:translate-x-0 lg:static lg:inset-0`}
+    >
+      <div className="p-4 flex justify-between items-center">
+        <Link href="/" className="mx-auto space-x-2">
+          <Image
+            src="/images/logo2.png"
+            alt="Novate Logo"
+            width={160}
+            height={160}
+          />
+        </Link>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          className="lg:hidden"
+          aria-label="Close sidebar"
+        >
+          <X className="h-6 w-6" />
+        </Button>
       </div>
-
-      <Button
-        variant="ghost"
-        size="icon"
-        className={`absolute max-md:hidden max-md:left-1 top-4 dark:text-white ${
-          isCollapsed ? "left-4" : "left-64"
-        }`}
-        onClick={toggleSidebar}
-      >
-        {isCollapsed ? (
-          <PanelLeftOpen className="text-gray-500" />
-        ) : (
-          <PanelRightOpen className="text-gray-500" />
-        )}
-      </Button>
+      <nav className="flex-1 px-2 py-4">
+        <ul className="space-y-2">
+          {links.map(({ href, label, icon: Icon }) => (
+            <li key={href}>
+              <Link
+                href={href}
+                className={`flex items-center space-x-2 px-4 py-4 rounded-md transition-colors duration-200 ${
+                  pathname === href
+                    ? "bg-primary text-white"
+                    : "hover:bg-gray-200"
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span>{label}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
     </div>
   );
-}
+};
+
+export default Sidebar;

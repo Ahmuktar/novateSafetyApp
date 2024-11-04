@@ -23,24 +23,24 @@ export default function WelcomePage() {
           width={200}
           height={200}
           alt="Logo"
-          className="block dark:hidden"
+          className="w-20 md:w-30 lg:w-fit block dark:hidden"
         />
         <Image
           src="/images/icon2.png"
           width={200}
           height={200}
           alt="Logo"
-          className="hidden dark:block"
+          className="w-20 md:w-30 lg:w-fit hidden dark:block"
         />
       </div>
       <div className="">
-        <h1 className="text-5xl font-bold text-center mb-4">
+        <h1 className="text-3xl lg:text-5xl font-bold text-center mb-4">
           Novate Safety App
         </h1>
-        <p className="text-xl font-semibold text-center max-w-2xl">
+        <p className="text-base lg:text-xl font-semibold text-center max-w-2xl">
           Report Adverse Drug Reactions (ADRs) securely and efficiently
         </p>
-        <p className="text-sm text-center text-muted-foreground mt-10 mb-6 max-w-xl">
+        <p className="text-xs lg:text-sm text-center text-muted-foreground mt-10 mb-6 max-w-xl">
           Before you start reporting, please read and accept our Terms and
           Conditions. This helps ensure you understand our policies and how we
           handle your reports.
@@ -55,7 +55,7 @@ export default function WelcomePage() {
             checked={acceptedTerms}
             onChange={(e) => setAcceptedTerms(e.target.checked)}
           />
-          <label htmlFor="acceptTerms" className="text-base">
+          <label htmlFor="acceptTerms" className="text-sm lg:text-base">
             I accept the{" "}
             <Link href="/" className="underline">
               Terms and Conditions
