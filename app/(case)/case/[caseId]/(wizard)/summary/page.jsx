@@ -64,33 +64,66 @@ export default function SummaryPage({ params }) {
     }
   };
 
+  // const handleSubmit = async () => {
+  //   setIsLoading(true);
+  //   try {
+  //     const updateResponse = await fetch(`${API_URL}/cases/${caseId}`, {
+  //       method: "PUT",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ status: "submitted" }),
+  //     });
+
+  //     if (updateResponse.ok) {
+  //       router.push(`/case/${caseId}/success`);
+  //     } else {
+  //       const updateData = await updateResponse.json();
+  //       toast({
+  //         title: "Submission Failed",
+  //         description:
+  //           updateData.message ||
+  //           "An issue occurred while submitting the case. Please try again.",
+  //         variant: "destructive",
+  //       });
+  //     }
+  //   } catch (error) {
+  //     toast({
+  //       title: "Submission Error",
+  //       description:
+  //         error.message ||
+  //         "An unexpected error occurred during submission. Please try again later.",
+  //       variant: "destructive",
+  //     });
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+  // Add to your SummaryCard component
+
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      const updateResponse = await fetch(`${API_URL}/cases/${caseId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "submitted" }),
+      const response = await fetch(`${API_URL}/cases/${caseId}/submit`, {
+        method: "POST",
       });
 
-      if (updateResponse.ok) {
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description:
+            "Your report has been submitted successfully. A confirmation email has been sent to your registered email address.",
+        });
         router.push(`/case/${caseId}/success`);
       } else {
-        const updateData = await updateResponse.json();
-        toast({
-          title: "Submission Failed",
-          description:
-            updateData.message ||
-            "An issue occurred while submitting the case. Please try again.",
-          variant: "destructive",
-        });
+        throw new Error(data.error || "Submission failed");
       }
     } catch (error) {
       toast({
-        title: "Submission Error",
+        title: "Error",
         description:
-          error.message ||
-          "An unexpected error occurred during submission. Please try again later.",
+          error.message || "Failed to submit report. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -112,8 +145,8 @@ export default function SummaryPage({ params }) {
         >
           Save as Draft
         </Button>
-        <Button onClick={handleSubmit} disabled={isLoading}>
-          Submit Case
+        <Button onClick={handleSubmit} className="mt-4" disabled={isLoading}>
+          {isLoading ? "Submitting..." : "Submit Report"}
         </Button>
       </div>
     </div>

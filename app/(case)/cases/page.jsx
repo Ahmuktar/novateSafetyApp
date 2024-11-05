@@ -104,8 +104,10 @@ export default function CasesPage() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <div className="mb-6 flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Adverse Drug Report Dashboard</h1>
+      <div className="mb-6 lg:flex justify-between items-center">
+        <h1 className="text-xl lg:text-3xl font-bold">
+          Adverse Drug Report Dashboard
+        </h1>
         <div className="relative"></div>
         <Button onClick={() => router.push("/case/new")}>New Report</Button>
       </div>

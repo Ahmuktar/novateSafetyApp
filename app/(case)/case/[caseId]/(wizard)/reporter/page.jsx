@@ -179,29 +179,108 @@ export default function ReporterPage({ params }) {
     }
   };
 
+  // const handleSubmit = async (event) => {
+  //   event.preventDefault();
+  //   setIsLoading(true);
+  //   setFormErrors({}); // Reset form errors
+
+  //   // Validate form data using Zod
+  //   const validation = reporterSchema.safeParse(formData);
+  //   if (!validation.success) {
+  //     const errors = validation.error.format(); // Get error messages
+  //     setFormErrors(errors); // Store errors in state
+  //     setIsLoading(false);
+  //     return;
+  //   }
+
+  //   try {
+  //     const caseId = params?.caseId || (await createCase());
+  //     if (caseId) {
+  //       await submitReporter(caseId);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error submitting form:", error);
+  //     setIsLoading(false);
+  //   }
+  // };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setIsLoading(true);
-    setFormErrors({}); // Reset form errors
+    setFormErrors({});
 
     // Validate form data using Zod
     const validation = reporterSchema.safeParse(formData);
     if (!validation.success) {
-      const errors = validation.error.format(); // Get error messages
-      setFormErrors(errors); // Store errors in state
+      const errors = validation.error.format();
+      setFormErrors(errors);
       setIsLoading(false);
       return;
     }
 
     try {
-      const caseId = params?.caseId || (await createCase());
-      if (caseId) {
-        await submitReporter(caseId);
+      if (params?.caseId) {
+        // If caseId exists, update the existing reporter
+        await updateReporter(params.caseId);
+      } else {
+        // If no caseId, create a new case and reporter
+        await createCaseAndReporter();
       }
     } catch (error) {
       console.error("Error submitting form:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit the form. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
     }
+  };
+
+  const updateReporter = async (caseId) => {
+    const response = await fetch(`${API_URL}/reporters/${caseId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update reporter");
+    }
+
+    router.push(`/case/${caseId}/patient`);
+  };
+
+  const createCaseAndReporter = async () => {
+    // First, create the case with the reporter_id
+    const caseResponse = await fetch(`${API_URL}/cases`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(),
+    });
+
+    if (!caseResponse.ok) {
+      throw new Error("Failed to create case");
+    }
+
+    const caseData = await caseResponse.json();
+    // Then, create the reporter
+    const reporterResponse = await fetch(`${API_URL}/reporters`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...formData, case_id: caseData.caseId }),
+    });
+
+    if (!reporterResponse.ok) {
+      throw new Error("Failed to create reporter");
+    }
+
+    const reporterData = await reporterResponse.json();
+
+    const updateCaseData = await updateCase(caseData.caseId, reporterData.id);
+
+    router.push(`/case/${caseData.caseId}/patient`);
   };
 
   const [isDraftLoading, setIsDraftLoading] = useState(false);
@@ -259,8 +338,8 @@ export default function ReporterPage({ params }) {
     <div className="relative">
       {isLoading || (isDraftLoading && <Loader />)}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 lg:gap-4">
           <div className="space-y-2">
             <Label htmlFor="describes">What best describes you?</Label>
             <Select
@@ -576,7 +655,11 @@ export default function ReporterPage({ params }) {
           <input
             type="checkbox"
             id="useInFuture"
-            checked={formData?.useInFuture === 1 ? true : false} // Controlled checkbox value
+            checked={
+              formData?.useInFuture === 1 || formData.useInFuture === true
+                ? true
+                : false
+            } // Controlled checkbox value
             onChange={(e) =>
               setFormData({ ...formData, useInFuture: e.target.checked })
             } // Update the state on change
@@ -589,20 +672,21 @@ export default function ReporterPage({ params }) {
             Use this information in future
           </label>
         </div>
-        <div className="flex justify-between space-x-4">
+        <div className="flex flex-col-reverse lg:flex-row justify-between gap-4 lg:space-x-4">
           <Button type="button" variant="outline" onClick={() => router.back()}>
             Back
           </Button>
-          <div className="gap-5 flex">
+          <div className="gap-5 flex justify-between">
             <Button
               type="button"
               variant="secondary"
               onClick={handleSaveDraft}
               disabled={isDraftLoading}
+              className="w-full"
             >
               {isDraftLoading ? "Submitting..." : "Save as draft"}
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Submitting..." : "Save & Continue"}
             </Button>
           </div>

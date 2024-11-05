@@ -1,7 +1,6 @@
 export const sidebarLinks = [
-  { label: "Home", href: "/", icon: "Home" },
-  { label: "Cases", href: "/cases", icon: "MessageSquareWarning" },
-  { label: "New Case", href: "/case/new", icon: "PlusIcon" },
+  { href: "/", label: "Home", icon: "Home" },
+  { href: "/cases", label: "Cases", icon: "List" },
 ];
 
 // export const API_URL =

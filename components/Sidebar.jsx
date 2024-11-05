@@ -5,7 +5,7 @@ import { Home, FileText, List, X } from "lucide-react";
 import { Button } from "./ui/button";
 import Image from "next/image";
 
-const Sidebar = ({ isOpen, onClose }) => {
+const Sidebar = () => {
   const pathname = usePathname();
 
   const links = [
@@ -14,11 +14,7 @@ const Sidebar = ({ isOpen, onClose }) => {
   ];
 
   return (
-    <div
-      className={`${
-        isOpen ? "translate-x-0" : "-translate-x-full"
-      } transform transition-transform duration-300 ease-in-out fixed inset-y-0 left-0 z-30 w-64 bg-gray-100 text-gray-800 overflow-y-auto lg:translate-x-0 lg:static lg:inset-0`}
-    >
+    <div className="lg:block hidden transform transition-transform duration-300 ease-in-out fixed inset-y-0 left-0 z-30 w-64 bg-gray-100 text-gray-800 overflow-y-auto lg:translate-x-0 lg:static lg:inset-0">
       <div className="p-4 flex justify-between items-center">
         <Link href="/" className="mx-auto space-x-2">
           <Image
@@ -28,15 +24,6 @@ const Sidebar = ({ isOpen, onClose }) => {
             height={160}
           />
         </Link>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClose}
-          className="lg:hidden"
-          aria-label="Close sidebar"
-        >
-          <X className="h-6 w-6" />
-        </Button>
       </div>
       <nav className="flex-1 px-2 py-4">
         <ul className="space-y-2">

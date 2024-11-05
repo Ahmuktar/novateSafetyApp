@@ -23,14 +23,14 @@ export default function WelcomePage() {
           width={200}
           height={200}
           alt="Logo"
-          className="w-20 md:w-30 lg:w-fit block dark:hidden"
+          className="w-20 md:w-30 lg:w-40 block dark:hidden"
         />
         <Image
           src="/images/icon2.png"
           width={200}
           height={200}
           alt="Logo"
-          className="w-20 md:w-30 lg:w-fit hidden dark:block"
+          className="w-20 md:w-30 lg:w-40 hidden dark:block"
         />
       </div>
       <div className="">

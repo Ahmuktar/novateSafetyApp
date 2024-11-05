@@ -52,7 +52,7 @@ export default function SuccessPage({ params }) {
             </Link>
           </Button>
           <Button variant="outline" className="w-full" asChild>
-            <Link href="/case">
+            <Link href="/cases">
               <Home className="mr-2 h-4 w-4" />
               Return to Dashboard
             </Link>

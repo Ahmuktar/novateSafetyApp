@@ -634,25 +634,25 @@ export default function MedicinePage({ params }) {
           </div>
         ))}
 
-        <div className="flex justify-between space-x-4">
+        <div className="flex flex-col-reverse lg:flex-row justify-between gap-4 lg:space-x-4">
           <Button
             type="button"
             variant="outline"
             onClick={() => router.push(`/case/${params.caseId}/patient`)}
-            disabled={isLoading}
           >
             Back
           </Button>
-          <div className="gap-5 flex">
+          <div className="gap-5 flex justify-between">
             <Button
               type="button"
               variant="secondary"
               onClick={handleSaveDraft}
               disabled={isDraftLoading}
+              className="w-full"
             >
               {isDraftLoading ? "Submitting..." : "Save as draft"}
             </Button>
-            <Button type="submit" onClick={handleSubmit} disabled={isLoading}>
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Submitting..." : "Save & Continue"}
             </Button>
           </div>

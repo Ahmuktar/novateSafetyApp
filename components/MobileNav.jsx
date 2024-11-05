@@ -2,57 +2,54 @@
 
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { MenuIcon, MessageSquare, PlusIcon } from "lucide-react";
+import { MenuIcon, Home, List, PlusIcon } from "lucide-react";
 import Link from "next/link";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { sidebarLinks } from "@/constant";
-import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 
 const MobileNav = () => {
   const pathname = usePathname();
+  const links = [
+    { href: "/", label: "Home", icon: Home },
+    { href: "/cases", label: "Cases", icon: List },
+  ];
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="md:hidden">
+        <Button variant="ghost" size="icon" className="lg:hidden">
           <MenuIcon className="h-6 w-6" />
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="w-[300px] sm:w-[400px]">
         <div>
           <div className="flex flex-col h-full">
-            <div className="my-5">
-              <Button
-                className="w-full flex text-white hover:text-white hover:bg-gray-700"
-                onClick={{}}
-              >
-                <Link href="/case/new" className="w-full flex">
-                  <PlusIcon className="h-5 w-5" />
-                  <span className="ml-2">New case</span>
-                </Link>
-              </Button>
+            <div className="p-4 my-4 flex justify-between items-center">
+              <Link href="/" className="mx-auto space-x-2">
+                <Image
+                  src="/images/logo2.png"
+                  alt="Novate Logo"
+                  width={160}
+                  height={160}
+                />
+              </Link>
             </div>
-            <ScrollArea>
-              {/* {sidebarLinks.map((item) => {
-                const fullRoute = `/case/${item.caseId}`;
-                const isActive = pathname === fullRoute;
-
-                return (
+            <ul className="space-y-2">
+              {links.map(({ href, label, icon: Icon }) => (
+                <li key={href}>
                   <Link
-                    href={`/case/${item.caseId}`}
-                    className={cn(
-                      "w-full flex h-11 px-4 py-2 rounded-md justify-start items-center gap-2 dark:text-gray-400 text-gray-800 hover:text-white hover:bg-gray-700 mb-1",
-                      { "bg-gray-700 dark:text-white text-white": isActive }
-                    )}
+                    href={href}
+                    className={`flex items-center space-x-2 px-4 py-4 rounded-md transition-colors duration-200 ${
+                      pathname === href
+                        ? "bg-primary text-white"
+                        : "hover:bg-gray-200"
+                    }`}
                   >
-                    <MessageSquare className="h-5 w-5 flex-shrink-0" />
-                    <span className="truncate flex-1 w-12 overflow-hidden text-ellipsis">
-                      {item.title}
-                    </span>
+                    <Icon className="w-5 h-5" />
+                    <span>{label}</span>
                   </Link>
-                );
-              })} */}
-            </ScrollArea>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </SheetContent>

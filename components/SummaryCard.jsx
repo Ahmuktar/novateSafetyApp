@@ -1,21 +1,15 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import {
-  ChevronRight,
-  Calendar,
-  User,
-  Pill,
-  AlertTriangle,
-  Loader2,
-} from "lucide-react";
+import { ChevronRight, Pill, AlertTriangle } from "lucide-react";
 import { API_URL } from "@/constant";
 import { formatDate } from "@/lib/utils";
+import Loader from "./Loader";
 
 const SummaryCard = ({ caseId }) => {
   const router = useRouter();
@@ -35,15 +29,21 @@ const SummaryCard = ({ caseId }) => {
         console.log(data);
       } catch (error) {
         setIsLoading(false);
+      } finally {
+        setIsLoading(false);
       }
     };
     getCaseDetails();
   }, []);
 
+  if (isLoading) {
+    return <Loader />;
+  }
+
   return (
     <div>
       <Card className="mb-8">
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="p-3 flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Reporter Information</CardTitle>
           <Button
             variant="ghost"
@@ -52,8 +52,8 @@ const SummaryCard = ({ caseId }) => {
             Edit <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
+        <CardContent className="p-2">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Firstname</p>
               <p className="font-medium">{caseData.reporter?.first_name}</p>
@@ -103,7 +103,7 @@ const SummaryCard = ({ caseId }) => {
       </Card>
 
       <Card className="mb-8">
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="p-3 flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Patient Information</CardTitle>
           <Button
             variant="ghost"
@@ -112,8 +112,8 @@ const SummaryCard = ({ caseId }) => {
             Edit <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 gap-4">
+        <CardContent className="p-2">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Initials</p>
               <p className="font-medium">{caseData.patient?.initials}</p>
@@ -151,7 +151,7 @@ const SummaryCard = ({ caseId }) => {
       </Card>
 
       <Card className="mb-8">
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="p-3 flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Medicine Information</CardTitle>
           <Button
             variant="ghost"
@@ -160,7 +160,7 @@ const SummaryCard = ({ caseId }) => {
             Edit <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-2">
           {caseData.medicines &&
             caseData.medicines.map((medicine, index) => (
               <div key={index} className="mb-4 last:mb-0">
@@ -168,7 +168,7 @@ const SummaryCard = ({ caseId }) => {
                   <Pill className="mr-2 h-5 w-5 text-primary" />
                   <h4 className="text-lg font-semibold">{medicine?.name}</h4>
                 </div>
-                <div className="grid grid-cols-2 gap-4 ml-7">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 ml-7">
                   <div>
                     <p className="text-sm text-muted-foreground">
                       Manufacturer
@@ -207,7 +207,7 @@ const SummaryCard = ({ caseId }) => {
       </Card>
 
       <Card className="mb-8">
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="p-3 flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Reaction Information</CardTitle>
           <Button
             variant="ghost"
@@ -216,7 +216,7 @@ const SummaryCard = ({ caseId }) => {
             Edit <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-2">
           {caseData.reactions &&
             caseData.reactions.map((reaction, index) => (
               <div key={index} className="mb-4 last:mb-0">
@@ -226,7 +226,7 @@ const SummaryCard = ({ caseId }) => {
                     {reaction?.reaction}
                   </h4>
                 </div>
-                <div className="grid grid-cols-2 gap-4 ml-7">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 ml-7">
                   <div>
                     <p className="text-sm text-muted-foreground">Start Date</p>
                     <p className="font-medium">{reaction?.react_start}</p>

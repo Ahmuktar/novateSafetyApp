@@ -21,7 +21,7 @@ import Loader from "@/components/Loader";
 // Zod schema for validation
 const patientSchema = z.object({
   initials: z.string().min(1, "Initials are required"),
-  age: z.number().min(1, "Age is required"),
+  age: z.string().min(1, "Age is required"),
   age_unit: z.string().min(1, "Age unit is required"),
   age_group: z.string().optional(),
   sex: z.string().min(1, "Sex is required"),
@@ -367,7 +367,7 @@ export default function PatientPage({ params }) {
           </div>
         </div>
 
-        <div className="flex justify-between space-x-4">
+        <div className="flex flex-col-reverse lg:flex-row justify-between gap-4 lg:space-x-4">
           <Button
             type="button"
             variant="outline"
@@ -375,16 +375,17 @@ export default function PatientPage({ params }) {
           >
             Back
           </Button>
-          <div className="gap-5 flex">
+          <div className="gap-5 flex justify-between">
             <Button
               type="button"
               variant="secondary"
               onClick={handleSaveDraft}
               disabled={isDraftLoading}
+              className="w-full"
             >
               {isDraftLoading ? "Submitting..." : "Save as draft"}
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Submitting..." : "Save & Continue"}
             </Button>
           </div>

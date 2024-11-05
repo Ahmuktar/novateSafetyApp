@@ -50,12 +50,12 @@ export default function CaseLayout({ children, params }) {
   );
 
   return (
-    <div className="container mx-auto py-10">
-      <Card className="w-full max-w-7xl mx-auto">
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-6">
+    <div className="container mx-auto lg:px-4 py-6 sm:py-10">
+      <Card className="w-full max-w-2xl border-none shadow-none lg:max-w-7xl mx-auto">
+        <CardContent className="p-0 px-4 sm:px-6 w-full">
+          <div className="flex flex-col lg:flex-row gap-6">
             {/* Sidebar for larger screens */}
-            <div className="max-md:hidden w-full md:w-1/3 lg:w-1/4">
+            <div className="hidden md:block w-full md:w-1/3 lg:w-1/4">
               <ol className="relative border-l border-gray-200 dark:border-gray-700">
                 {steps.map((step, index) => (
                   <li key={index} className="mb-12 ml-6">
@@ -104,11 +104,11 @@ export default function CaseLayout({ children, params }) {
 
             {/* Mobile step navigation */}
             <div className="mb-8 md:hidden">
-              <ol className="flex items-center justify-between w-full text-sm font-medium text-center text-gray-500 dark:text-gray-400 sm:text-base overflow-x-auto">
+              <ol className="flex items-center justify-between w-full text-xs sm:text-sm font-medium text-center text-gray-500 dark:text-gray-400 overflow-x-auto">
                 {steps.map((step, index) => (
                   <li
                     key={index}
-                    className={`flex flex-col items-center min-w-[80px] md:w-full ${
+                    className={`flex flex-col items-center min-w-[60px] sm:min-w-[80px] ${
                       index === currentStepIndex
                         ? "text-blue-600 dark:text-blue-500"
                         : ""
@@ -116,17 +116,15 @@ export default function CaseLayout({ children, params }) {
                       index < currentStepIndex
                         ? "text-green-600 dark:text-green-500"
                         : ""
-                    } after:content-[''] after:w-full after:h-1 after:border-b after:border-gray-200 after:border-1 after:hidden sm:after:inline-block after:mx-6 xl:after:mx-10 dark:after:border-gray-700`}
+                    }`}
                   >
-                    <span className="flex items-center after:content-['/'] sm:after:hidden after:mx-2 after:text-gray-200 dark:after:text-gray-500">
+                    <span className="flex items-center">
                       {index < currentStepIndex ? (
-                        <CheckCircle2 className="w-5 h-5 sm:w-7 sm:h-7 mr-2.5" />
+                        <CheckCircle2 className="w-5 h-5 mr-1.5" />
                       ) : (
-                        <Circle className="w-5 h-5 sm:w-7 sm:h-7 mr-2.5" />
+                        <Circle className="w-5 h-5 mr-1.5" />
                       )}
-                      <span className="sm:inline-flex sm:ml-2">
-                        {index + 1}
-                      </span>
+                      <span>{index + 1}</span>
                     </span>
                   </li>
                 ))}
@@ -135,10 +133,10 @@ export default function CaseLayout({ children, params }) {
 
             {/* Main content */}
             <div className="w-full md:w-2/3 lg:w-3/4">
-              <h2 className="text-2xl font-bold mb-2 sm:mb-4">
+              <h2 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-4">
                 {steps[currentStepIndex].title}
               </h2>
-              <p className="text-gray-500 text-sm mb-6">
+              <p className="text-gray-500 text-sm sm:text-base mb-6">
                 {steps[currentStepIndex].description}
               </p>
               <Suspense fallback={<Loader />}>{children}</Suspense>
